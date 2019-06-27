@@ -1,0 +1,53 @@
+
+.slide-left-enter-active, .slide-left-leave-active, .slide-right-enter-active, .slide-right-leave-active
+  position fixed
+  height 100%
+  width 100%
+  max-width rems(750)
+  top 0
+  left 0
+  transition all 0.2s ease
+  overflow hidden
+  // top 40px
+.slide-left-enter, .slide-right-leave-active
+  opacity 0
+  transform translate(rems(100), 0)
+.slide-left-leave-active, .slide-right-enter
+  opacity 0
+  transform translate(rems(-100), 0)
+.slide-down-leave-active
+  position fixed
+  width 100%
+  max-width rems(750)
+  height 100%
+  transition all 0.3s ease
+.slide-up-leave-active
+  position fixed
+  width 100%
+  max-width rems(750)
+  height 100%
+  transition all 0.3s ease
+  z-index 99
+.slide-up-enter-active
+  position fixed
+  width 100%
+  max-width rems(750)
+  height 100%
+  top 0
+  left 0
+  transition all 0.31s ease // 稍微动画时间长一点 防止层级出问题
+.slide-down-enter-active
+  position fixed
+  width 100%
+  max-width rems(750)
+  height 100%
+  top 0
+  left 0
+  transition all 0.32s ease // 稍微动画时间长一点 防止层级出问题
+  z-index 99
+.slide-down-enter
+  transform translate(0, 100vh)
+// .slide-down-leave-active,
+.slide-up-leave-to
+  // opacity 0
+  transform translate(0, 100vh)

@@ -1,0 +1,4 @@
+/vendor
+debug
+/src/node_modules
+.DS_Store
