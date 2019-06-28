@@ -21,15 +21,12 @@
     </a-layout-sider>
     <a-layout style="box-sizing: border-box;" :style="{height: '100vh'}">
       <a-layout-header :style="{ background: '#fff', padding: 0}">
-        <a-button @click="()=>{goBack()}" :style="{float: 'left'}">
-          <a-icon type="left"/>Go back
-        </a-button>
-        <a-icon
+        <!-- <a-icon
           class="trigger"
           :type="collapsed ? 'menu-unfold' : 'menu-fold'"
           @click="()=> collapsed = !collapsed"
           :style="{float: 'left'}"
-        />
+        /> -->
       </a-layout-header>
       <a-layout-content :style="{ margin: '24px 16px 0'}">
         <div :style="{ padding: '24px'}">
@@ -46,16 +43,13 @@ export default {
   name: "common",
   data() {
     return {
-      collapsed: false
+      // collapsed: false
     };
   },
-  collapsed() {
-    this.collapsed = !this.collapsed;
-  },
+  // collapsed() {
+  //   this.collapsed = !this.collapsed;
+  // },
   methods: {
-    goBack() {
-      this.$router.go(-1);
-    }
   }
 };
 </script>

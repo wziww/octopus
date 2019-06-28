@@ -14,20 +14,20 @@
 let chartData = {};
 let t = null;
 let timeData = [];
-let statsData_t = [];
+let statsDataT = [];
 export default {
   name: "setting_redis",
   data() {
     this.lineChartSettings = {
       area: true,
       scale: [true, true],
-      yAxisName: ["集群使用内存(M)"],
+      yAxisName: ["M"],
       xAxisName: ["时间"]
     };
     this.statsSettings = {
       area: true,
       scale: [true, true],
-      yAxisName: ["kbps"],
+      yAxisName: ["value"],
       xAxisName: ["时间"]
     };
     this.chartSettings = {
@@ -78,9 +78,11 @@ export default {
       if (d.Type === "/config/redis/detail") {
         let UsedMemoryTotal = 0;
         let TotalSystemMemoryTotal = 0;
+        let Maxmemory = 0;
         for (let i of d.Data) {
           UsedMemoryTotal += Number(i.UsedMemory);
           TotalSystemMemoryTotal += Number(i.TotalSystemMemory);
+          Maxmemory += Number(i.Maxmemory);
         }
         if (timeData.length >= 20) {
           timeData.shift();
@@ -94,7 +96,7 @@ export default {
           rows: [
             {
               key: "集群内存占用",
-              percent: (UsedMemoryTotal / TotalSystemMemoryTotal).toFixed(4)
+              percent: (UsedMemoryTotal / Maxmemory).toFixed(4)
             }
           ]
         };
@@ -110,10 +112,10 @@ export default {
           InstantaneousInputKbps += Number(i.InstantaneousInputKbps);
           InstantaneousOpsPerSec += Number(i.InstantaneousOpsPerSec);
         }
-        if (statsData_t.length >= 20) {
-          statsData_t.shift();
+        if (statsDataT.length >= 20) {
+          statsDataT.shift();
         }
-        statsData_t.push({
+        statsDataT.push({
           t: that.$moment().format("hh:mm:ss"),
           output_Kbps: InstantaneousOutputKbps,
           input_Kbps: InstantaneousInputKbps,
@@ -129,7 +131,7 @@ export default {
       },
       statsData: {
         columns: ["t", "output_Kbps", "input_Kbps", "Ops"],
-        rows: statsData_t
+        rows: statsDataT
       }
     };
   },

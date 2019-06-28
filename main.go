@@ -27,7 +27,7 @@ func (p *program) Init(e svc.Environment) error {
 }
 func (p *program) Start() error {
 	go func() {
-		http.HandleFunc("/v1", ws)
+		http.HandleFunc("/v1/websocket", ws)
 		log.Fatal(http.ListenAndServe(*addr, nil))
 	}()
 	return nil

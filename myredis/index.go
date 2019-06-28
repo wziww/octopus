@@ -88,6 +88,7 @@ type DetailResult struct {
 	STATE             string
 	SLOT              string
 	TotalSystemMemory string
+	Maxmemory         string
 	UsedMemory        string
 }
 
@@ -151,6 +152,10 @@ func GetDetail(id string) []*DetailResult {
 							}
 							if len(z) > len("total_system_memory:") && z[:len("total_system_memory:")] == "total_system_memory:" {
 								v.TotalSystemMemory = z[len("total_system_memory:"):]
+								continue
+							}
+							if len(z) > len("maxmemory:") && z[:len("maxmemory:")] == "maxmemory:" {
+								v.Maxmemory = z[len("maxmemory:"):]
 								continue
 							}
 						}

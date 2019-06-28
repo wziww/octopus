@@ -1,7 +1,7 @@
 // 用户
 import {
   loginApi
-} from './user'
+} from './user';
 export {
   loginApi
-}
+};

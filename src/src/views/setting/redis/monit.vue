@@ -1,6 +1,6 @@
 <template>
   <div>
-    <a-table :scroll="{ x: 1000 }" :dataSource="data">
+    <a-table :scroll="{ x: 1000 ,y:800}" :dataSource="data">
       <a-table-column title="address" data-index="address" key="address"/>
       <a-table-column title="id" data-index="id" key="id">
         <template slot-scope="id">
@@ -32,6 +32,9 @@
       </a-table-column>
       <a-table-column title="占用内存" data-index="UsedMemory" key="UsedMemory">
         <template slot-scope="UsedMemory">{{UsedMemory}}M</template>
+      </a-table-column>
+      <a-table-column title="可用内存" data-index="Maxmemory" key="Maxmemory">
+        <template slot-scope="Maxmemory">{{Maxmemory}}M</template>
       </a-table-column>
       <a-table-column title="系统总内存" data-index="TotalSystemMemory" key="TotalSystemMemory">
         <template slot-scope="TotalSystemMemory">{{TotalSystemMemory}}M</template>
@@ -96,7 +99,7 @@ export default {
               return has / 16383;
             })(),
             memoryPercent: (() => {
-              return Number(i.UsedMemory) / Number(i.TotalSystemMemory);
+              return Number(i.UsedMemory) / Number(i.Maxmemory);
             })(),
             state: [
               {
@@ -104,6 +107,7 @@ export default {
                 COLOR: i.STATE === "connected" ? "#00c94d" : "RED"
               }
             ],
+            Maxmemory: (i.Maxmemory / 1024 / 1024).toFixed(2),
             UsedMemory: (i.UsedMemory / 1024 / 1024).toFixed(2),
             TotalSystemMemory: (i.TotalSystemMemory / 1024 / 1024).toFixed(2),
             operation: []
