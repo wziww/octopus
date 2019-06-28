@@ -1,5 +1,14 @@
 <template>
   <div>
+    <div style="width: 100%;float: left;margin-bottom: 20px;">
+      <span class="each-chose" style="font-size: 20px;font-weight: border;">Refresh Every :</span>
+      <a-button class="each-chose" :type="index[0]" @click="chose(0)">1 s</a-button>
+      <a-button class="each-chose" :type="index[1]" @click="chose(1)">10 s</a-button>
+      <a-button class="each-chose" :type="index[2]" @click="chose(2)">30 s</a-button>
+      <a-button class="each-chose" :type="index[3]" @click="chose(3)">1 min</a-button>
+      <a-button class="each-chose" :type="index[4]" @click="chose(4)">5 min</a-button>
+      <a-button class="each-chose" :type="index[5]" @click="chose(5)">10 min</a-button>
+    </div>
     <ve-line style="width: 50%;float: left;" :data="lineChartData" :settings="lineChartSettings"></ve-line>
     <ve-liquidfill
       style="width: 50%;float: left;"
@@ -13,8 +22,10 @@
 <script>
 let chartData = {};
 let t = null;
+let index = ["primary", "default", "default", "default", "default", "default"];
 let timeData = [];
 let statsDataT = [];
+let interTime = 1000;
 export default {
   name: "setting_redis",
   data() {
@@ -32,7 +43,7 @@ export default {
     };
     this.chartSettings = {
       seriesMap: {
-        集群内存占用: {
+        内存使用量: {
           radius: "40%",
           center: ["20%", "30%"],
           itemStyle: {
@@ -47,7 +58,7 @@ export default {
           label: {
             formatter(options) {
               const { seriesName, value } = options;
-              return `${seriesName}\n${value * 100}%`;
+              return `${seriesName}\n${(value * 100).toFixed(2)}%`;
             },
             fontSize: 20
           }
@@ -72,7 +83,7 @@ export default {
         Func: "/redis/stats",
         Data: JSON.stringify({ id: that.$route.query.id })
       });
-    }, 1000);
+    }, interTime);
     this.$socket.onmessage = da => {
       const d = JSON.parse(da.data);
       if (d.Type === "/config/redis/detail") {
@@ -95,7 +106,7 @@ export default {
           columns: ["key", "percent"],
           rows: [
             {
-              key: "集群内存占用",
+              key: "内存使用量",
               percent: (UsedMemoryTotal / Maxmemory).toFixed(4)
             }
           ]
@@ -103,7 +114,6 @@ export default {
         that.chartData = chartData;
       }
       if (d.Type === "/redis/stats") {
-        console.log(d);
         let InstantaneousInputKbps = 0;
         let InstantaneousOutputKbps = 0;
         let InstantaneousOpsPerSec = 0;
@@ -125,10 +135,12 @@ export default {
     };
     return {
       chartData,
+      interTime,
       lineChartData: {
         columns: ["t", "memory_total"],
         rows: timeData
       },
+      index,
       statsData: {
         columns: ["t", "output_Kbps", "input_Kbps", "Ops"],
         rows: statsDataT
@@ -141,6 +153,111 @@ export default {
     }
   },
   methods: {
+    chose(x) {
+      const that = this;
+      index = [
+        "default",
+        "default",
+        "default",
+        "default",
+        "default",
+        "default"
+      ];
+      index[x] = "primary";
+      this.index = index;
+      switch (x) {
+        case 0:
+          interTime = 1000;
+          this.interTime = interTime;
+          window.clearInterval(t);
+          t = setInterval(() => {
+            this.$socket.sendObj({
+              Func: "/config/redis/detail",
+              Data: JSON.stringify({ id: that.$route.query.id })
+            });
+            this.$socket.sendObj({
+              Func: "/redis/stats",
+              Data: JSON.stringify({ id: that.$route.query.id })
+            });
+          }, interTime);
+          break;
+        case 1:
+          interTime = 1000 * 10;
+          this.interTime = interTime;
+          window.clearInterval(t);
+          t = setInterval(() => {
+            this.$socket.sendObj({
+              Func: "/config/redis/detail",
+              Data: JSON.stringify({ id: that.$route.query.id })
+            });
+            this.$socket.sendObj({
+              Func: "/redis/stats",
+              Data: JSON.stringify({ id: that.$route.query.id })
+            });
+          }, interTime);
+          break;
+        case 2:
+          interTime = 1000 * 30;
+          this.interTime = interTime;
+          window.clearInterval(t);
+          t = setInterval(() => {
+            this.$socket.sendObj({
+              Func: "/config/redis/detail",
+              Data: JSON.stringify({ id: that.$route.query.id })
+            });
+            this.$socket.sendObj({
+              Func: "/redis/stats",
+              Data: JSON.stringify({ id: that.$route.query.id })
+            });
+          }, interTime);
+          break;
+        case 3:
+          interTime = 1000 * 60;
+          this.interTime = interTime;
+          window.clearInterval(t);
+          t = setInterval(() => {
+            this.$socket.sendObj({
+              Func: "/config/redis/detail",
+              Data: JSON.stringify({ id: that.$route.query.id })
+            });
+            this.$socket.sendObj({
+              Func: "/redis/stats",
+              Data: JSON.stringify({ id: that.$route.query.id })
+            });
+          }, interTime);
+          break;
+        case 4:
+          interTime = 1000 * 60 * 5;
+          this.interTime = interTime;
+          window.clearInterval(t);
+          t = setInterval(() => {
+            this.$socket.sendObj({
+              Func: "/config/redis/detail",
+              Data: JSON.stringify({ id: that.$route.query.id })
+            });
+            this.$socket.sendObj({
+              Func: "/redis/stats",
+              Data: JSON.stringify({ id: that.$route.query.id })
+            });
+          }, interTime);
+          break;
+        case 5:
+          interTime = 1000 * 60 * 10;
+          this.interTime = interTime;
+          window.clearInterval(t);
+          t = setInterval(() => {
+            this.$socket.sendObj({
+              Func: "/config/redis/detail",
+              Data: JSON.stringify({ id: that.$route.query.id })
+            });
+            this.$socket.sendObj({
+              Func: "/redis/stats",
+              Data: JSON.stringify({ id: that.$route.query.id })
+            });
+          }, interTime);
+          break;
+      }
+    },
     split: str => {
       if (typeof str !== "string") return [];
       const len = str.length;
@@ -156,4 +273,10 @@ export default {
 <style lang="stylus" scoped>
 .ant-table td {
   white-space: nowrap;
-}</style>
+}
+
+.each-chose {
+  float: left;
+  margin-right: 10px;
+}
+</style>

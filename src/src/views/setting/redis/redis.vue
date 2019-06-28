@@ -123,13 +123,15 @@ export default {
       Data = [];
       switch (d.Type) {
         case "/config/redis": // 配置列表
-          for (let i of Object.keys(d.Data)) {
-            Data.push({
-              name: i,
-              data: d.Data[i]
-            });
+          if (Object.keys(d.Data)) {
+            for (let i of Object.keys(d.Data)) {
+              Data.push({
+                name: i,
+                data: d.Data[i]
+              });
+            }
+            that.Data = Data;
           }
-          that.Data = Data;
           break;
       }
     };

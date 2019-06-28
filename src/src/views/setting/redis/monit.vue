@@ -1,6 +1,15 @@
 <template>
   <div>
-    <a-table :scroll="{ x: 1000 ,y:800}" :dataSource="data">
+    <div style="width: 100%;float: left;margin-bottom: 20px;">
+      <span class="each-chose" style="font-size: 20px;font-weight: border;">Refresh Every :</span>
+      <a-button class="each-chose" :type="index[0]" @click="chose(0)">1 s</a-button>
+      <a-button class="each-chose" :type="index[1]" @click="chose(1)">10 s</a-button>
+      <a-button class="each-chose" :type="index[2]" @click="chose(2)">30 s</a-button>
+      <a-button class="each-chose" :type="index[3]" @click="chose(3)">1 min</a-button>
+      <a-button class="each-chose" :type="index[4]" @click="chose(4)">5 min</a-button>
+      <a-button class="each-chose" :type="index[5]" @click="chose(5)">10 min</a-button>
+    </div>
+    <a-table :scroll="{ x: 1000 }" :dataSource="data" style="float: left;width: 100%;">
       <a-table-column title="address" data-index="address" key="address"/>
       <a-table-column title="id" data-index="id" key="id">
         <template slot-scope="id">
@@ -61,14 +70,19 @@
 </template>
 <script>
 let data = [];
+let interTime = 1000;
+let t = null;
+let index = ["primary", "default", "default", "default", "default", "default"];
 export default {
   name: "setting_redis",
   data() {
     const that = this;
-    this.$socket.sendObj({
-      Func: "/config/redis/detail",
-      Data: JSON.stringify({ id: that.$route.query.id })
-    });
+    t = setInterval(() => {
+      this.$socket.sendObj({
+        Func: "/config/redis/detail",
+        Data: JSON.stringify({ id: that.$route.query.id })
+      });
+    }, interTime);
     this.$socket.onmessage = da => {
       const d = JSON.parse(da.data);
       if (d.Type === "/config/redis/detail") {
@@ -113,18 +127,105 @@ export default {
             operation: []
           });
         }
+        data = data
+          .sort((a, b) => {
+            return Number(a.epoth) - Number(b.epoth);
+          })
+          .sort((a, b) => {
+            if (a.role[0].ROLE > b.role[0].ROLE) return 1;
+            return -1;
+          });
         this.data = data;
       }
     };
     return {
-      data
+      data,
+      index
       // chartData
     };
   },
-  beforeDestroy() {
-    // console.log(1);
-  },
   methods: {
+    chose(x) {
+      const that = this;
+      index = [
+        "default",
+        "default",
+        "default",
+        "default",
+        "default",
+        "default"
+      ];
+      index[x] = "primary";
+      this.index = index;
+      switch (x) {
+        case 0:
+          interTime = 1000;
+          this.interTime = interTime;
+          window.clearInterval(t);
+          t = setInterval(() => {
+            this.$socket.sendObj({
+              Func: "/config/redis/detail",
+              Data: JSON.stringify({ id: that.$route.query.id })
+            });
+          }, interTime);
+          break;
+        case 1:
+          interTime = 1000 * 10;
+          this.interTime = interTime;
+          window.clearInterval(t);
+          t = setInterval(() => {
+            this.$socket.sendObj({
+              Func: "/config/redis/detail",
+              Data: JSON.stringify({ id: that.$route.query.id })
+            });
+          }, interTime);
+          break;
+        case 2:
+          interTime = 1000 * 30;
+          this.interTime = interTime;
+          window.clearInterval(t);
+          t = setInterval(() => {
+            this.$socket.sendObj({
+              Func: "/config/redis/detail",
+              Data: JSON.stringify({ id: that.$route.query.id })
+            });
+          }, interTime);
+          break;
+        case 3:
+          interTime = 1000 * 60;
+          this.interTime = interTime;
+          window.clearInterval(t);
+          t = setInterval(() => {
+            this.$socket.sendObj({
+              Func: "/config/redis/detail",
+              Data: JSON.stringify({ id: that.$route.query.id })
+            });
+          }, interTime);
+          break;
+        case 4:
+          interTime = 1000 * 60 * 5;
+          this.interTime = interTime;
+          window.clearInterval(t);
+          t = setInterval(() => {
+            this.$socket.sendObj({
+              Func: "/config/redis/detail",
+              Data: JSON.stringify({ id: that.$route.query.id })
+            });
+          }, interTime);
+          break;
+        case 5:
+          interTime = 1000 * 60 * 10;
+          this.interTime = interTime;
+          window.clearInterval(t);
+          t = setInterval(() => {
+            this.$socket.sendObj({
+              Func: "/config/redis/detail",
+              Data: JSON.stringify({ id: that.$route.query.id })
+            });
+          }, interTime);
+          break;
+      }
+    },
     split: str => {
       if (typeof str !== "string") return [];
       const len = str.length;
@@ -134,10 +235,21 @@ export default {
       }
       return arr;
     }
+  },
+  beforeDestroy() {
+    if (t !== null) {
+      window.clearInterval(t);
+    }
   }
 };
 </script>
 <style lang="stylus" scoped>
+.each-chose {
+  float: left;
+  margin-right: 10px;
+}
+
 .ant-table td {
   white-space: nowrap;
-}</style>
+}
+</style>

@@ -19,6 +19,9 @@ type target struct {
 	self        interface{}
 }
 
+var (
+	rw sync.RWMutex
+)
 var redisSources map[string]*target
 
 func init() {
@@ -31,17 +34,15 @@ func AddSource(name string, cfg interface{}) error {
 	if redisSources[n] != nil {
 		return errors.New(name + " has exists")
 	}
-	var (
-		mutex sync.Mutex
-	)
 	switch cfg.(type) {
 	case *redis.Options: // 单机模式
 	case *redis.ClusterOptions: // 集群模式
-		mutex.Lock()
 		c := redis.NewClusterClient(cfg.(*redis.ClusterOptions))
-		ps := c.PoolStats()
-		if ps.TotalConns != 0 {
-			fmt.Println(ps)
+		a, e := c.Ping().Result()
+		if e != nil {
+			fmt.Println(e)
+		}
+		if a == "PONG" {
 			redisSources[n] = &target{
 				Name:  name,
 				Type:  "cluster",
@@ -49,7 +50,6 @@ func AddSource(name string, cfg interface{}) error {
 				self:  c,
 			}
 		}
-		mutex.Unlock()
 	default:
 		return errors.New("unknow type to init")
 	}
@@ -58,6 +58,7 @@ func AddSource(name string, cfg interface{}) error {
 
 // GetConfig 获取配置好的数据源
 func GetConfig() interface{} {
+	rw.RLock()
 	for _, v := range redisSources {
 		switch v.self.(type) {
 		case *redis.Client: // 单机模式
@@ -75,6 +76,7 @@ func GetConfig() interface{} {
 			}
 		}
 	}
+	rw.RUnlock()
 	return redisSources
 }
 
@@ -184,6 +186,9 @@ func GetSTATS(id string) []*Stats {
 		return nil
 	}
 	var result []*Stats
+	var (
+		mutex sync.Mutex
+	)
 	switch redisSources[id].Type {
 	case "cluster":
 		z := redisSources[id].self.(*redis.ClusterClient)
@@ -209,7 +214,9 @@ func GetSTATS(id string) []*Stats {
 					continue
 				}
 			}
+			mutex.Lock()
 			result = append(result, v)
+			mutex.Unlock()
 			return nil
 		})
 		return result

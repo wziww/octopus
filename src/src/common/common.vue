@@ -1,6 +1,10 @@
 <template>
   <a-layout id="components-layout-demo-custom-trigger">
-    <a-layout-sider :trigger="null" collapsible v-model="collapsed" :style="{height: '100vh'}">
+    <a-layout-sider
+      :trigger="null"
+      collapsible
+      :style="{height: '100vh',overflow: 'auto',position: 'fixed', left: 0 }"
+    >
       <div class="logo">
         <img :style="{width: 'auto' , height: '100%'}">
       </div>
@@ -19,15 +23,15 @@
         </a-menu-item>
       </a-menu>
     </a-layout-sider>
-    <a-layout style="box-sizing: border-box;" :style="{height: '100vh'}">
-      <a-layout-header :style="{ background: '#fff', padding: 0}">
-        <!-- <a-icon
+    <a-layout style="box-sizing: border-box;" :style="{ marginLeft: '200px',minHeight:'100vh' }">
+      <!-- <a-layout-header :style="{ background: '#fff', padding: 0}"> -->
+      <!-- <a-icon
           class="trigger"
           :type="collapsed ? 'menu-unfold' : 'menu-fold'"
           @click="()=> collapsed = !collapsed"
           :style="{float: 'left'}"
-        /> -->
-      </a-layout-header>
+      />-->
+      <!-- </a-layout-header> -->
       <a-layout-content :style="{ margin: '24px 16px 0'}">
         <div :style="{ padding: '24px'}">
           <router-view></router-view>
@@ -49,7 +53,6 @@ export default {
   // collapsed() {
   //   this.collapsed = !this.collapsed;
   // },
-  methods: {
-  }
+  methods: {}
 };
 </script>

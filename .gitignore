@@ -3,3 +3,4 @@ debug
 /src/node_modules
 .DS_Store
 /build
+/src/package-lock.json
