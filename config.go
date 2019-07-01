@@ -31,6 +31,7 @@ type ConfigServer struct {
 type RedisDetail struct {
 	Name    string   `toml:"name"`
 	Address []string `toml:"address"`
+	DB      int      `toml:"db"`
 }
 
 func init() {
@@ -47,6 +48,14 @@ func init() {
 		for _, v := range C.Redis["cluster"] {
 			myredis.AddSource(v.Name, &redis.ClusterOptions{
 				Addrs: v.Address,
+			})
+		}
+	}
+	if C.Redis["single"] != nil {
+		for _, v := range C.Redis["single"] {
+			myredis.AddSource(v.Name, &redis.Options{
+				Addr: v.Address[0],
+				DB:   v.DB,
 			})
 		}
 	}

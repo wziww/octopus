@@ -36,6 +36,19 @@ func AddSource(name string, cfg interface{}) error {
 	}
 	switch cfg.(type) {
 	case *redis.Options: // 单机模式
+		c := redis.NewClient(cfg.(*redis.Options))
+		a, e := c.Ping().Result()
+		if e != nil {
+			fmt.Println(e)
+		}
+		if a == "PONG" {
+			redisSources[n] = &target{
+				Name:  name,
+				Type:  "single",
+				Addrs: []string{cfg.(*redis.Options).Addr},
+				self:  c,
+			}
+		}
 	case *redis.ClusterOptions: // 集群模式
 		c := redis.NewClusterClient(cfg.(*redis.ClusterOptions))
 		a, e := c.Ping().Result()
@@ -62,6 +75,13 @@ func GetConfig() interface{} {
 	for _, v := range redisSources {
 		switch v.self.(type) {
 		case *redis.Client: // 单机模式
+			z := v.self.(*redis.Client)
+			str, err := z.Ping().Result()
+			if err != nil || str != "PONG" {
+				v.Status = "failed"
+			} else {
+				v.Status = "ok"
+			}
 		case *redis.ClusterClient: // 集群模式
 			z := v.self.(*redis.ClusterClient)
 			str, e := z.ClusterInfo().Result()
@@ -70,7 +90,7 @@ func GetConfig() interface{} {
 			} else {
 				for _, x := range strings.Split(str, "\n") {
 					if len(x) > 14 && x[:14] == "cluster_state:" {
-						v.Status = x[14:]
+						v.Status = strings.Replace(x[14:], "\r", "", -1)
 					}
 				}
 			}
@@ -100,6 +120,29 @@ func GetDetail(id string) []*DetailResult {
 		return nil
 	}
 	switch redisSources[id].Type {
+
+	case "single":
+		z := redisSources[id].self.(*redis.Client)
+		str, _ := z.Info("memory").Result()
+		strArr := strings.Split(str, "\n")
+		v := &DetailResult{
+			ADDR: z.Options().Addr,
+		}
+		for _, z := range strArr {
+			if len(z) > len("used_memory:") && z[:len("used_memory:")] == "used_memory:" {
+				v.UsedMemory = z[len("used_memory:"):]
+				continue
+			}
+			if len(z) > len("total_system_memory:") && z[:len("total_system_memory:")] == "total_system_memory:" {
+				v.TotalSystemMemory = z[len("total_system_memory:"):]
+				continue
+			}
+			if len(z) > len("maxmemory:") && z[:len("maxmemory:")] == "maxmemory:" {
+				v.Maxmemory = z[len("maxmemory:"):]
+				continue
+			}
+		}
+		return []*DetailResult{v}
 	case "cluster":
 		z := redisSources[id].self.(*redis.ClusterClient)
 		str, e := z.ClusterNodes().Result()
@@ -190,6 +233,29 @@ func GetSTATS(id string) []*Stats {
 		mutex sync.Mutex
 	)
 	switch redisSources[id].Type {
+
+	case "single":
+		z := redisSources[id].self.(*redis.Client)
+		str, _ := z.Info("stats").Result()
+		strArr := strings.Split(str, "\n")
+		v := &Stats{
+			ADDR: z.Options().Addr,
+		}
+		for _, z := range strArr {
+			if len(z) > len("instantaneous_input_kbps:") && z[:len("instantaneous_input_kbps:")] == "instantaneous_input_kbps:" {
+				v.InstantaneousInputKbps = z[len("instantaneous_input_kbps:"):]
+				continue
+			}
+			if len(z) > len("instantaneous_ops_per_sec:") && z[:len("instantaneous_ops_per_sec:")] == "instantaneous_ops_per_sec:" {
+				v.InstantaneousOpsPerSec = z[len("instantaneous_ops_per_sec:"):]
+				continue
+			}
+			if len(z) > len("InstantaneousOutputKbps:") && z[:len("InstantaneousOutputKbps:")] == "InstantaneousOutputKbps:" {
+				v.InstantaneousOutputKbps = z[len("InstantaneousOutputKbps:"):]
+				continue
+			}
+		}
+		return []*Stats{v}
 	case "cluster":
 		z := redisSources[id].self.(*redis.ClusterClient)
 		z.ForEachNode(func(c *redis.Client) error {

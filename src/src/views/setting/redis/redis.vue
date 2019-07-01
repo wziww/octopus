@@ -80,7 +80,10 @@
           </div>
           <div class="each" style="border-bottom: 1px solid light; padding-bottom: 10px;">
             <span style="float: left;">Status:</span>
-            <a-tag color="green" style="float: left;">{{item.data.Status}}</a-tag>
+            <a-tag
+              :color="item.data.Status==='ok'?'green':'red'"
+              style="float: left;"
+            >{{item.data.Status}}</a-tag>
           </div>
           <router-link :to="'/setting/redis_monit?id='+item.name" class="hd">
             <a-icon type="table"/>
@@ -125,7 +128,6 @@ export default {
     const that = this;
     this.$socket.onmessage = data => {
       const d = JSON.parse(data.data);
-      console.log(d);
       Data = [];
       switch (d.Type) {
         case "/config/redis": // 配置列表
