@@ -107,8 +107,8 @@ func init() {
 		if c.Name != "" && c.Type != "" && c.URL != "" {
 			switch c.Type {
 			case "cluster":
-				myredis.AddSource(c.Name, &redis.ClusterOptions{
-					Addrs: []string{c.URL},
+				myredis.AddSource(c.Name, &redis.Options{
+					Addr: c.URL,
 				})
 			}
 		}

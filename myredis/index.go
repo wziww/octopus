@@ -2,7 +2,6 @@ package myredis
 
 import (
 	"crypto/md5"
-	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -19,6 +18,28 @@ type target struct {
 	self        interface{}
 }
 
+// Stats redis info stats
+type Stats struct {
+	InstantaneousInputKbps  string
+	InstantaneousOutputKbps string
+	InstantaneousOpsPerSec  string
+	ADDR                    string
+}
+
+// DetailResult ...
+type DetailResult struct {
+	ID                string
+	ADDR              string
+	FOLLOW            string
+	ROLE              string
+	EPOTH             string
+	STATE             string
+	SLOT              string
+	TotalSystemMemory string
+	Maxmemory         string
+	UsedMemory        string
+}
+
 var (
 	rw sync.RWMutex
 )
@@ -28,50 +49,64 @@ func init() {
 	redisSources = make(map[string]*target)
 }
 
+var (
+	// REDISALREADYEXISTS 该配置已存在
+	REDISALREADYEXISTS = -1
+	// REDISINITERROR 节点启动失败
+	REDISINITERROR = -2
+)
+
 // AddSource 添加监控源
-func AddSource(name string, cfg interface{}) error {
+func AddSource(name string, cfg *redis.Options) int {
 	n := fmt.Sprintf("%x", md5.Sum([]byte(name)))
+	REDISTYPE := "single"
+	var c interface{}
 	if redisSources[n] != nil {
-		return errors.New(name + " has exists")
+		return REDISALREADYEXISTS
 	}
-	switch cfg.(type) {
-	case *redis.Options: // 单机模式
-		c := redis.NewClient(cfg.(*redis.Options))
-		a, e := c.Ping().Result()
-		if e != nil {
-			fmt.Println(e)
-		}
-		if a == "PONG" {
-			redisSources[n] = &target{
-				Name:  name,
-				Type:  "single",
-				Addrs: []string{cfg.(*redis.Options).Addr},
-				self:  c,
-			}
-		}
-	case *redis.ClusterOptions: // 集群模式
-		c := redis.NewClusterClient(cfg.(*redis.ClusterOptions))
-		a, e := c.Ping().Result()
-		if e != nil {
-			fmt.Println(e)
-		}
-		if a == "PONG" {
-			redisSources[n] = &target{
-				Name:  name,
-				Type:  "cluster",
-				Addrs: cfg.(*redis.ClusterOptions).Addrs,
-				self:  c,
-			}
-		}
-	default:
-		return errors.New("unknow type to init")
+	c = redis.NewClient(cfg)
+	clusterInfoStr, e := c.(*redis.Client).Info("Cluster").Result()
+	if e != nil {
+		fmt.Println(clusterInfoStr)
+		return REDISINITERROR
 	}
-	return nil
+	var pingStr string
+	var pingError error
+	for _, v := range strings.Split(clusterInfoStr, "\n") {
+		if len(v) > len("cluster_enabled:") && v[:len("cluster_enabled:")] == "cluster_enabled:" &&
+			v[len("cluster_enabled:"):] == "0" {
+			REDISTYPE = "cluster"
+			c.(*redis.Client).Close()
+			c = redis.NewClusterClient(&redis.ClusterOptions{
+				Addrs: []string{cfg.Addr},
+			})
+			goto finish
+		}
+	}
+finish:
+	if REDISTYPE == "cluster" {
+		pingStr, e = c.(*redis.ClusterClient).Ping().Result()
+	} else {
+		pingStr, e = c.(*redis.Client).Ping().Result()
+	}
+	if pingError != nil {
+		fmt.Println(pingError)
+	}
+	if pingStr == "PONG" {
+		rw.Lock()
+		redisSources[n] = &target{
+			Name:  name,
+			Type:  REDISTYPE,
+			Addrs: []string{cfg.Addr},
+			self:  c,
+		}
+		rw.Unlock()
+	}
+	return 0
 }
 
 // GetConfig 获取配置好的数据源
 func GetConfig() interface{} {
-	rw.RLock()
 	for _, v := range redisSources {
 		switch v.self.(type) {
 		case *redis.Client: // 单机模式
@@ -96,22 +131,7 @@ func GetConfig() interface{} {
 			}
 		}
 	}
-	rw.RUnlock()
 	return redisSources
-}
-
-// DetailResult ...
-type DetailResult struct {
-	ID                string
-	ADDR              string
-	FOLLOW            string
-	ROLE              string
-	EPOTH             string
-	STATE             string
-	SLOT              string
-	TotalSystemMemory string
-	Maxmemory         string
-	UsedMemory        string
 }
 
 // GetDetail 获取节点详情
@@ -159,8 +179,6 @@ func GetDetail(id string) []*DetailResult {
 				ADDR := arr[1]
 				ROLE := arr[2]
 				FOLLOW := arr[3]
-				// ping time 4
-				// pong time 5
 				EPOCH := arr[6]
 				STATE := arr[7]
 				var slot string
@@ -215,13 +233,6 @@ func GetDetail(id string) []*DetailResult {
 	return nil
 }
 
-type Stats struct {
-	InstantaneousInputKbps  string
-	InstantaneousOutputKbps string
-	InstantaneousOpsPerSec  string
-	ADDR                    string
-}
-
 // GetSTATS 获取节点详情
 // redis  info STATS
 func GetSTATS(id string) []*Stats {
@@ -233,7 +244,6 @@ func GetSTATS(id string) []*Stats {
 		mutex sync.Mutex
 	)
 	switch redisSources[id].Type {
-
 	case "single":
 		z := redisSources[id].self.(*redis.Client)
 		str, _ := z.Info("stats").Result()
@@ -296,9 +306,13 @@ func RemoveSource(id string) error {
 		return nil
 	}
 	switch redisSources[id].self.(type) {
+	case *redis.Client:
+		redisSources[id].self.(*redis.Client).Close()
 	case *redis.ClusterClient:
 		redisSources[id].self.(*redis.ClusterClient).Close()
-		delete(redisSources, id)
 	}
+	rw.Lock()
+	delete(redisSources, id)
+	rw.Unlock()
 	return nil
 }

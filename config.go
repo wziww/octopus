@@ -17,8 +17,8 @@ var C *Config
 
 // Config 配置
 type Config struct {
-	Server *ConfigServer            `toml:"server"`
-	Redis  map[string][]RedisDetail `toml:"redis"`
+	Server *ConfigServer `toml:"server"`
+	Redis  []RedisDetail `toml:"redis"`
 }
 
 // ConfigServer 服务端配置
@@ -44,19 +44,9 @@ func init() {
 		C = &Config{}
 		toml.Decode(string(fdata), C)
 	}
-	if C.Redis["cluster"] != nil {
-		for _, v := range C.Redis["cluster"] {
-			myredis.AddSource(v.Name, &redis.ClusterOptions{
-				Addrs: v.Address,
-			})
-		}
-	}
-	if C.Redis["single"] != nil {
-		for _, v := range C.Redis["single"] {
-			myredis.AddSource(v.Name, &redis.Options{
-				Addr: v.Address[0],
-				DB:   v.DB,
-			})
-		}
+	for _, v := range C.Redis {
+		myredis.AddSource(v.Name, &redis.Options{
+			Addr: v.Address[0],
+		})
 	}
 }
