@@ -10,33 +10,38 @@
       <a-button class="each-chose" :type="index[5]" @click="chose(5)">10 min</a-button>
     </div>
     <a-table :scroll="{ x: 1000 }" :dataSource="data" style="float: left;width: 100%;">
-      <a-table-column title="address" data-index="address" key="address"/>
-      <a-table-column title="id" data-index="id" key="id">
+      <a-table-column title="address" data-index="address" key="address" />
+      <a-table-column title="id" data-index="id" key="id" v-if="type==='cluster'">
         <template slot-scope="id">
           <div v-for="each in split(id)" style="width: 100%;" :key="each">{{each}}</div>
         </template>
       </a-table-column>
-      <a-table-column title="follow" data-index="follow" key="follow">
+      <a-table-column title="follow" data-index="follow" key="follow" v-if="type==='cluster'">
         <template slot-scope="follow">
           <div v-for="each in split(follow)" style="width: 100%;" :key="each">{{each}}</div>
         </template>
       </a-table-column>
-      <a-table-column title="角色" data-index="role" key="role">
+      <a-table-column title="角色" data-index="role" key="role" v-if="type==='cluster'">
         <template slot-scope="role">
           <span>
             <a-tag v-for="each in role" :color="each.COLOR" :key="each.ROLE">{{each.ROLE}}</a-tag>
           </span>
         </template>
       </a-table-column>
-      <a-table-column title="epoth 值" data-index="epoth" key="epoth"/>
-      <a-table-column title="拥有 slot（槽点）" data-index="slot" key="slot">
+      <a-table-column title="epoth 值" data-index="epoth" key="epoth" v-if="type==='cluster'" />
+      <a-table-column title="拥有 slot（槽点）" data-index="slot" key="slot" v-if="type==='cluster'">
         <template slot-scope="slot">
           <a-tag v-for="each in slot" :key="each" color="#042b36">{{each}}</a-tag>
         </template>
       </a-table-column>
-      <a-table-column title="slot 拥有比例" data-index="slotPercent" key="slotPercent">
+      <a-table-column
+        title="slot 拥有比例"
+        data-index="slotPercent"
+        key="slotPercent"
+        v-if="type==='cluster'"
+      >
         <template slot-scope="slotPercent">
-          <a-progress type="circle" :percent="parseInt(slotPercent * 100)" :width="80"/>
+          <a-progress type="circle" :percent="parseInt(slotPercent * 100)" :width="80" />
         </template>
       </a-table-column>
       <a-table-column title="占用内存" data-index="UsedMemory" key="UsedMemory">
@@ -50,13 +55,17 @@
       </a-table-column>
       <a-table-column title="内存占用比例" data-index="memoryPercent" key="memoryPercent">
         <template slot-scope="memoryPercent">
-          <a-progress type="circle" :percent="parseInt(memoryPercent * 100)" :width="80"/>
+          <a-progress type="circle" :percent="parseInt(memoryPercent * 100)" :width="80" />
         </template>
       </a-table-column>
       <a-table-column title="状态" data-index="state" key="state">
         <template slot-scope="state">
           <span>
-            <a-tag v-for="each in state" :color="each.COLOR" :key="each.STATE">{{each.STATE}}</a-tag>
+            <a-tag
+              v-for="each in state"
+              :color="each.COLOR"
+              :key="each.STATE"
+            >{{each.STATE?each.STATE:"disconnected"}}</a-tag>
           </span>
         </template>
       </a-table-column>
@@ -70,6 +79,7 @@
 </template>
 <script>
 let data = [];
+let type = "cluster";
 let interTime = 1000;
 let t = null;
 let index = ["primary", "default", "default", "default", "default", "default"];
@@ -88,6 +98,7 @@ export default {
       if (d.Type === "/config/redis/detail") {
         data = [];
         for (let i of d.Data) {
+          that.type = i.Type;
           data.push({
             key: i.ID,
             id: i.ID,
@@ -140,7 +151,8 @@ export default {
     };
     return {
       data,
-      index
+      index,
+      type
       // chartData
     };
   },

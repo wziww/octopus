@@ -4,3 +4,4 @@ debug
 .DS_Store
 /build
 /src/package-lock.json
+Gopkg.lock

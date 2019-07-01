@@ -26,15 +26,8 @@ type Stats struct {
 	ADDR                    string
 }
 
-// DetailResult ...
-type DetailResult struct {
-	ID                string
-	ADDR              string
-	FOLLOW            string
-	ROLE              string
-	EPOTH             string
-	STATE             string
-	SLOT              string
+// Memory redis info memory
+type Memory struct {
 	TotalSystemMemory string
 	Maxmemory         string
 	UsedMemory        string
@@ -134,19 +127,35 @@ func GetConfig() interface{} {
 	return redisSources
 }
 
+// DetailResult ...
+type DetailResult struct {
+	ID     string
+	ADDR   string
+	FOLLOW string
+	ROLE   string
+	EPOTH  string
+	STATE  string
+	SLOT   string
+	Type   string
+	Memory
+}
+
 // GetDetail 获取节点详情
 func GetDetail(id string) []*DetailResult {
 	if redisSources[id] == nil {
 		return nil
 	}
-	switch redisSources[id].Type {
-
-	case "single":
+	switch redisSources[id].self.(type) {
+	case *redis.Client:
 		z := redisSources[id].self.(*redis.Client)
 		str, _ := z.Info("memory").Result()
 		strArr := strings.Split(str, "\n")
 		v := &DetailResult{
 			ADDR: z.Options().Addr,
+			Type: "single",
+		}
+		if len(strArr) > 5 {
+			v.STATE = "connected"
 		}
 		for _, z := range strArr {
 			if len(z) > len("used_memory:") && z[:len("used_memory:")] == "used_memory:" {
@@ -163,7 +172,7 @@ func GetDetail(id string) []*DetailResult {
 			}
 		}
 		return []*DetailResult{v}
-	case "cluster":
+	case *redis.ClusterClient:
 		z := redisSources[id].self.(*redis.ClusterClient)
 		str, e := z.ClusterNodes().Result()
 		if e != nil {
@@ -201,6 +210,7 @@ func GetDetail(id string) []*DetailResult {
 					EPOTH:  EPOCH,
 					STATE:  STATE,
 					SLOT:   slot,
+					Type:   "cluster",
 				})
 			}
 			z.ForEachNode(func(c *redis.Client) error {
