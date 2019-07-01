@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,8 +9,6 @@ import (
 
 	"github.com/judwhite/go-svc/svc"
 )
-
-var addr = flag.String("addr", "0.0.0.0:8080", "http service address")
 
 type program struct {
 }
@@ -28,7 +25,7 @@ func (p *program) Init(e svc.Environment) error {
 func (p *program) Start() error {
 	go func() {
 		http.HandleFunc("/v1/websocket", ws)
-		log.Fatal(http.ListenAndServe(*addr, nil))
+		log.Fatal(http.ListenAndServe(C.Server.ListenAddress, nil))
 	}()
 	return nil
 }

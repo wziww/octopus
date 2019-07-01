@@ -1,0 +1,7 @@
+[server]
+listen_address="0.0.0.0:8080"
+[redis]
+  [[redis.cluster]]
+  name="impress"
+  address=["10.0.6.49:6379"]
+
