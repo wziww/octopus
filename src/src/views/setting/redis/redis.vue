@@ -18,12 +18,12 @@
                 v-decorator="['name', {
                   rules: [{ required: true, message: 'Please enter name' }]
                 }]"
-                placeholder="Please enter user name"
+                placeholder="Please enter name"
               />
             </a-form-item>
           </a-col>
           <a-col :span="12">
-            <a-form-item label="Url(多个 ; 隔开)">
+            <a-form-item label="Url">
               <a-input
                 v-decorator="['url', {
                   rules: [{ required: true, message: 'please enter url' }]
@@ -31,21 +31,6 @@
                 style="width: 100%"
                 placeholder="please enter url"
               />
-            </a-form-item>
-          </a-col>
-        </a-row>
-        <a-row :gutter="16">
-          <a-col :span="12">
-            <a-form-item label="模式属性">
-              <a-select
-                v-decorator="['type', {
-                  rules: [{ required: true, message: 'Please choose the instance type' }]
-                }]"
-                placeholder="Please choose the instance type"
-              >
-                <a-select-option value="cluster">集群模式(cluster)</a-select-option>
-                <!-- <a-select-option value="single">单机模式</a-select-option> -->
-              </a-select>
             </a-form-item>
           </a-col>
         </a-row>
@@ -143,6 +128,7 @@ export default {
           break;
       }
     };
+    this.$socket.onopen = (e)=>{console.log(e)}
     return {
       form: this.$form.createForm(this),
       visible: false,

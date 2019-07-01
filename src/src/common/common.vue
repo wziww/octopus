@@ -17,8 +17,14 @@
         </a-menu-item>
         <a-menu-item key="3">
           <router-link to="/setting">
-            <a-icon type="setting"/>
+            <a-icon type="cloud-o"/>
             <span>数据源</span>
+          </router-link>
+        </a-menu-item>
+        <a-menu-item key="4">
+          <router-link to="/system">
+            <a-icon type="setting"/>
+            <span>配置</span>
           </router-link>
         </a-menu-item>
       </a-menu>

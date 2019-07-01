@@ -1,6 +1,7 @@
 import { Error404 } from './base';
 import { CasePage } from './modules/case';
 import common from '../common/common';
+import { System } from './modules/system';
 import { SettingPage, RedisPage, RedisMonit, RedisMonitMain, RedisSlowLog } from './modules/setting';
 export default [
   {
@@ -14,6 +15,7 @@ export default [
       RedisMonit,
       RedisMonitMain,
       RedisSlowLog,
+      System,
       Error404
     ]
   }
