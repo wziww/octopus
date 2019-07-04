@@ -67,7 +67,7 @@ func AddSource(name string, cfg *redis.Options) int {
 	var pingError error
 	for _, v := range strings.Split(clusterInfoStr, "\n") {
 		if len(v) > len("cluster_enabled:") && v[:len("cluster_enabled:")] == "cluster_enabled:" &&
-			v[len("cluster_enabled:"):] == "0" {
+			strings.Replace(v[len("cluster_enabled:"):], "\r", "", -1) == "1" {
 			REDISTYPE = "cluster"
 			c.(*redis.Client).Close()
 			c = redis.NewClusterClient(&redis.ClusterOptions{
@@ -78,9 +78,9 @@ func AddSource(name string, cfg *redis.Options) int {
 	}
 finish:
 	if REDISTYPE == "cluster" {
-		pingStr, e = c.(*redis.ClusterClient).Ping().Result()
+		pingStr, pingError = c.(*redis.ClusterClient).Ping().Result()
 	} else {
-		pingStr, e = c.(*redis.Client).Ping().Result()
+		pingStr, pingError = c.(*redis.Client).Ping().Result()
 	}
 	if pingError != nil {
 		fmt.Println(pingError)

@@ -112,13 +112,16 @@ export default {
             ],
             epoth: i.EPOTH,
             slot: i.SLOT.split(" ").filter(e => {
-              if (e.indexOf("-") !== -1) return e;
+              if (e.indexOf("-") !== -1 && Number.isInteger(Number(e[0]))) return e;
+              if ("" + e === "" + Number(e)) return e;
             }),
             slotPercent: (() => {
               let has = 0;
               for (let z of i.SLOT.split(" ")) {
-                if (z.indexOf("-") !== -1) {
+                if(z.indexOf("-") !== -1 && Number.isInteger(Number(z[0]))){
                   has += Number(z.split("-")[1]) - Number(z.split("-")[0]);
+                } else if ("" + z === "" + Number(z)) {
+                  has++;
                 }
               }
               return has / 16383;
