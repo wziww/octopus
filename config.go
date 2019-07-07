@@ -36,6 +36,7 @@ type RedisDetail struct {
 
 func init() {
 	configPath := flag.String("c", "./conf/server.conf.toml", "config path")
+	flag.Parse()
 	if C == nil {
 		fdata, openError := ioutil.ReadFile(*configPath)
 		if openError != nil {
