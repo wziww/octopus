@@ -12,6 +12,13 @@ import (
 	"github.com/go-redis/redis"
 )
 
+// Trim ...
+func Trim(str string) string {
+	return strings.Replace(
+		strings.Replace(str, "\r", "", -1),
+		"\n", "", -1)
+}
+
 type target struct {
 	Name        string
 	Type        string
@@ -79,12 +86,11 @@ func AddSource(name string, opt *redis.Options) int {
 	var pingError error
 	for _, v := range strings.Split(clusterInfoStr, "\n") {
 		if len(v) > len("cluster_enabled:") && v[:len("cluster_enabled:")] == "cluster_enabled:" &&
-			strings.Replace(v[len("cluster_enabled:"):], "\r", "", -1) == "1" {
+			Trim(v[len("cluster_enabled:"):]) == "1" {
 			REDISTYPE = "cluster"
 			c.(*redis.Client).Close()
 			c = redis.NewClusterClient(&redis.ClusterOptions{
 				Addrs: []string{opt.Addr},
-				// Dialer: opt.Dialer,
 			})
 			goto finish
 		}
@@ -131,13 +137,12 @@ func GetServer(id string) []*Server {
 	case *redis.Client:
 		z := redisSources[id].self.(*redis.Client)
 		str, _ := z.Info("server").Result()
-		strArr := strings.Split(str, "\n")
 		v := &Server{
 			ADDR: z.Options().Addr,
 		}
-		for _, z := range strArr {
+		for _, z := range strings.Split(str, "\n") {
 			if len(z) > len("redis_version:") && z[:len("redis_version:")] == "redis_version:" {
-				v.RedisVersion = strings.Replace(z[len("redis_version:"):], "\r", "", -1)
+				v.RedisVersion = Trim(z[len("redis_version:"):])
 				continue
 			}
 		}
@@ -160,8 +165,8 @@ func GetServer(id string) []*Server {
 				}
 			}
 			mutex.Lock()
+			defer mutex.Unlock()
 			result = append(result, v)
-			mutex.Unlock()
 			return nil
 		})
 		return result
@@ -189,7 +194,7 @@ func GetConfig() interface{} {
 			} else {
 				for _, x := range strings.Split(str, "\n") {
 					if len(x) > 14 && x[:14] == "cluster_state:" {
-						v.Status = strings.Replace(x[14:], "\r", "", -1)
+						v.Status = Trim(x[14:])
 					}
 				}
 			}
@@ -292,7 +297,7 @@ func GetDetail(id string) []*DetailResult {
 					if len(strings.Split(v.ADDR, oaddr)) > 1 {
 						strArr := strings.Split(str, "\r")
 						for _, z := range strArr {
-							z = strings.Replace(z, "\n", "", -1)
+							z = Trim(z)
 							if len(z) > len("used_memory:") && z[:len("used_memory:")] == "used_memory:" {
 								v.UsedMemory = z[len("used_memory:"):]
 								continue
