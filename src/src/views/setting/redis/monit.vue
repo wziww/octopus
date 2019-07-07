@@ -1,6 +1,20 @@
 <template>
   <div>
     <div style="width: 100%;float: left;margin-bottom: 20px;">
+      <a-alert
+        message="存在节点未配置「最大可用内存」 : maxmemory"
+        type="warning"
+        showIcon
+        :style="{display: maxmemoryWarning,width:'400px',float: 'left'}"
+      />
+      <a-alert
+        message="存在节点内存使用达 90% +"
+        type="warning"
+        showIcon
+        :style="{display: usedmemoryWarning,width:'400px',float: 'left'}"
+      />
+    </div>
+    <div style="width: 100%;float: left;margin-bottom: 20px;">
       <span class="each-chose" style="font-size: 20px;font-weight: border;">Refresh Every :</span>
       <a-button class="each-chose" :type="index[0]" @click="chose(0)">1 s</a-button>
       <a-button class="each-chose" :type="index[1]" @click="chose(1)">10 s</a-button>
@@ -11,6 +25,11 @@
     </div>
     <a-table :scroll="{ x: 1000 }" :dataSource="data" style="float: left;width: 100%;">
       <a-table-column title="address" data-index="address" key="address" />
+      <a-table-column title="version" data-index="version" key="version">
+        <template slot-scope="version">
+          <a-tag :color="version.color">{{version.value}}</a-tag>
+        </template>
+      </a-table-column>
       <a-table-column title="id" data-index="id" key="id" v-if="type==='cluster'">
         <template slot-scope="id">
           <div v-for="each in split(id)" style="width: 100%;" :key="each">{{each}}</div>
@@ -48,7 +67,9 @@
         <template slot-scope="UsedMemory">{{UsedMemory}}M</template>
       </a-table-column>
       <a-table-column title="可用内存" data-index="Maxmemory" key="Maxmemory">
-        <template slot-scope="Maxmemory">{{Maxmemory}}M</template>
+        <template slot-scope="Maxmemory">
+          <span :style="{color: Maxmemory.color}">{{Maxmemory.value}}M</span>
+        </template>
       </a-table-column>
       <a-table-column title="系统总内存" data-index="TotalSystemMemory" key="TotalSystemMemory">
         <template slot-scope="TotalSystemMemory">{{TotalSystemMemory}}M</template>
@@ -86,6 +107,9 @@ let index = ["primary", "default", "default", "default", "default", "default"];
 export default {
   name: "setting_redis",
   data() {
+    data = [];
+    let maxmemoryWarning = "none";
+    let usedmemoryWarning = "none";
     const that = this;
     t = setInterval(() => {
       this.$socket.sendObj({
@@ -112,13 +136,15 @@ export default {
             ],
             epoth: i.EPOTH,
             slot: i.SLOT.split(" ").filter(e => {
-              if (e.indexOf("-") !== -1 && Number.isInteger(Number(e[0]))) return e;
+              if (e.indexOf("-") !== -1 && Number.isInteger(Number(e[0]))) {
+                return e;
+              }
               if ("" + e === "" + Number(e)) return e;
             }),
             slotPercent: (() => {
               let has = 0;
               for (let z of i.SLOT.split(" ")) {
-                if(z.indexOf("-") !== -1 && Number.isInteger(Number(z[0]))){
+                if (z.indexOf("-") !== -1 && Number.isInteger(Number(z[0]))) {
                   has += Number(z.split("-")[1]) - Number(z.split("-")[0]);
                 } else if ("" + z === "" + Number(z)) {
                   has++;
@@ -127,7 +153,13 @@ export default {
               return has / 16383;
             })(),
             memoryPercent: (() => {
-              return Number(i.UsedMemory) / Number(i.Maxmemory);
+              const percent = Number(i.UsedMemory) / Number(i.Maxmemory);
+              if (Infinity !== percent && percent >= 0.9) {
+                if (parseInt(Math.random() * 100) > 80) {
+                  that.usedmemoryWarning = "";
+                }
+              }
+              return percent;
             })(),
             state: [
               {
@@ -135,7 +167,24 @@ export default {
                 COLOR: i.STATE === "connected" ? "#00c94d" : "RED"
               }
             ],
-            Maxmemory: (i.Maxmemory / 1024 / 1024).toFixed(2),
+            version: (() => {
+              return {
+                color: i.VERSION.startsWith("4.") ? "#00c94d" : "#2593fc",
+                value: i.VERSION
+              };
+            })(),
+            Maxmemory: (() => {
+              const tmp = i.Maxmemory / 1024 / 1024;
+              if (tmp === 0) {
+                if (parseInt(Math.random() * 100) > 80) {
+                  that.maxmemoryWarning = "";
+                }
+              }
+              return {
+                value: tmp.toFixed(2),
+                color: tmp < 1 ? "red" : ""
+              };
+            })(),
             UsedMemory: (i.UsedMemory / 1024 / 1024).toFixed(2),
             TotalSystemMemory: (i.TotalSystemMemory / 1024 / 1024).toFixed(2),
             operation: []
@@ -155,7 +204,9 @@ export default {
     return {
       data,
       index,
-      type
+      type,
+      maxmemoryWarning,
+      usedmemoryWarning
       // chartData
     };
   },

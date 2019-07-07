@@ -29,6 +29,7 @@ let interTime = 1000;
 export default {
   name: "setting_redis",
   data() {
+    statsDataT = [];
     this.lineChartSettings = {
       area: true,
       scale: [true, true],
@@ -88,11 +89,11 @@ export default {
       const d = JSON.parse(da.data);
       if (d.Type === "/config/redis/detail") {
         let UsedMemoryTotal = 0;
-        let TotalSystemMemoryTotal = 0;
+        // let TotalSystemMemoryTotal = 0;
         let Maxmemory = 0;
         for (let i of d.Data) {
           UsedMemoryTotal += Number(i.UsedMemory);
-          TotalSystemMemoryTotal += Number(i.TotalSystemMemory);
+          // TotalSystemMemoryTotal += Number(i.TotalSystemMemory);
           Maxmemory += Number(i.Maxmemory);
         }
         if (timeData.length >= 20) {
@@ -133,6 +134,7 @@ export default {
         });
       }
     };
+
     return {
       chartData,
       interTime,

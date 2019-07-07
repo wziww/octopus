@@ -31,10 +31,12 @@ func (p *program) Start() error {
 				return
 			}
 			params := strings.Split(r.RequestURI, "/")
-			for _, v := range params[len(params):] {
-				if v == "." {
-					http.FileServer(http.Dir("./src/dist")).ServeHTTP(w, r)
-					return
+			for _, v := range params[len(params)-1:] {
+				for _, z := range v {
+					if z == []rune(".")[0] {
+						http.FileServer(http.Dir("./src/dist")).ServeHTTP(w, r)
+						return
+					}
 				}
 			}
 			http.ServeFile(w, r, "./src/dist/index.html")

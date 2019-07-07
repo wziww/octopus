@@ -94,6 +94,7 @@ let t = null;
 export default {
   name: "setting_redis",
   data() {
+    Data = [];
     try {
       this.$socket.sendObj({
         Func: "/config/redis"
@@ -128,7 +129,6 @@ export default {
           break;
       }
     };
-    this.$socket.onopen = (e)=>{console.log(e)}
     return {
       form: this.$form.createForm(this),
       visible: false,
@@ -136,6 +136,7 @@ export default {
     };
   },
   beforeDestroy() {
+    this.Data = [];
     if (t !== null) {
       window.clearInterval(t);
     }

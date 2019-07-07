@@ -111,6 +111,64 @@ finish:
 	return 0
 }
 
+// Server ...
+type Server struct {
+	ADDR         string
+	RedisVersion string
+}
+
+// GetServer 获取服务信息
+// redis info server
+func GetServer(id string) []*Server {
+	if redisSources[id] == nil {
+		return nil
+	}
+	var result []*Server
+	var (
+		mutex sync.Mutex
+	)
+	switch redisSources[id].self.(type) {
+	case *redis.Client:
+		z := redisSources[id].self.(*redis.Client)
+		str, _ := z.Info("server").Result()
+		strArr := strings.Split(str, "\n")
+		v := &Server{
+			ADDR: z.Options().Addr,
+		}
+		for _, z := range strArr {
+			if len(z) > len("redis_version:") && z[:len("redis_version:")] == "redis_version:" {
+				v.RedisVersion = strings.Replace(z[len("redis_version:"):], "\r", "", -1)
+				continue
+			}
+		}
+		return []*Server{v}
+	case *redis.ClusterClient:
+		z := redisSources[id].self.(*redis.ClusterClient)
+		z.ForEachNode(func(c *redis.Client) error {
+			str, e := c.Info("server").Result()
+			if e != nil {
+				fmt.Println(e)
+				return nil
+			}
+			v := &Server{
+				ADDR: c.Options().Addr,
+			}
+			for _, z := range strings.Split(str, "\n") {
+				if len(z) > len("redis_version:") && z[:len("redis_version:")] == "redis_version:" {
+					v.RedisVersion = z[len("redis_version:"):]
+					continue
+				}
+			}
+			mutex.Lock()
+			result = append(result, v)
+			mutex.Unlock()
+			return nil
+		})
+		return result
+	}
+	return nil
+}
+
 // GetConfig 获取配置好的数据源
 func GetConfig() interface{} {
 	for _, v := range redisSources {
@@ -142,14 +200,15 @@ func GetConfig() interface{} {
 
 // DetailResult ...
 type DetailResult struct {
-	ID     string
-	ADDR   string
-	FOLLOW string
-	ROLE   string
-	EPOTH  string
-	STATE  string
-	SLOT   string
-	Type   string
+	ID      string
+	ADDR    string
+	FOLLOW  string
+	ROLE    string
+	EPOTH   string
+	STATE   string
+	SLOT    string
+	Type    string
+	VERSION string
 	Memory
 }
 
@@ -230,7 +289,7 @@ func GetDetail(id string) []*DetailResult {
 				str, _ := c.Info("memory").Result()
 				for _, v := range result {
 					oaddr := c.Options().Addr
-					if (len(v.ADDR) >= len(oaddr)) && v.ADDR[:len(oaddr)] == oaddr {
+					if len(strings.Split(v.ADDR, oaddr)) > 1 {
 						strArr := strings.Split(str, "\r")
 						for _, z := range strArr {
 							z = strings.Replace(z, "\n", "", -1)
@@ -251,6 +310,14 @@ func GetDetail(id string) []*DetailResult {
 				}
 				return nil
 			})
+			servers := GetServer(id)
+			for _, v := range result {
+				for _, z := range servers {
+					if len(strings.Split(v.ADDR, z.ADDR)) > 1 {
+						v.VERSION = z.RedisVersion
+					}
+				}
+			}
 			return result
 		}
 		return nil
