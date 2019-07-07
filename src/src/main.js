@@ -13,7 +13,7 @@ import VueNativeSock from 'vue-native-websocket';
 import moment from 'vue-moment';
 Vue.use(VCharts);
 Vue.use(moment);
-Vue.use(VueNativeSock, 'ws://0.0.0.0:8080/v1', {
+Vue.use(VueNativeSock, 'ws://0.0.0.0:8081/v1/websocket', {
   format: 'json', reconnection: true
 });
 Vue.config.productionTip = false;

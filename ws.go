@@ -24,6 +24,9 @@ var limitDetail map[string]int64
 var (
 	mutex sync.Mutex
 )
+var (
+	sendLock sync.Mutex
+)
 
 func ws(w http.ResponseWriter, r *http.Request) {
 	mutex.Lock()
@@ -47,13 +50,17 @@ func ws(w http.ResponseWriter, r *http.Request) {
 			}
 			break
 		}
-		result := handle(message, connID)
-		err = c.WriteMessage(mt, result)
-		if err != nil {
-			log.Println("write:", err)
-			break
-		}
+		go func() {
+			result := handle(message, connID)
+			sendLock.Lock()
+			defer sendLock.Unlock()
+			err = c.WriteMessage(mt, result)
+			if err != nil {
+				log.Println("write:", err)
+			}
+		}()
 	}
+	return
 }
 
 type socketReturn struct {
@@ -82,12 +89,11 @@ func handle(message []byte, connID string) []byte {
 		if routerPath != "/config/redis/detail" {
 			return routerAll[routerPath](b.Data)
 		}
-		if limitDetail[connID] == 0 || (time.Now().UnixNano()/1e6-limitDetail[connID]) > 1000 {
+		if limitDetail[connID] == 0 || (time.Now().UnixNano()/1e6-limitDetail[connID]) > 1000/10 {
 			limitDetail[connID] = time.Now().UnixNano() / 1e6
 			return routerAll[routerPath](b.Data)
-		} else {
-			goto end
 		}
+		goto end
 	}
 end:
 	return []byte("404")

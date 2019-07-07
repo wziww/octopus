@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	_ "octopus/myredis"
+	"strings"
 	"syscall"
 
 	"github.com/judwhite/go-svc/svc"
@@ -24,7 +25,21 @@ func (p *program) Init(e svc.Environment) error {
 }
 func (p *program) Start() error {
 	go func() {
-		http.HandleFunc("/v1/websocket", ws)
+		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+			if r.RequestURI == "/v1/websocket" {
+				ws(w, r)
+				return
+			}
+			params := strings.Split(r.RequestURI, "/")
+			for _, v := range params[len(params):] {
+				if v == "." {
+					http.FileServer(http.Dir("./src/dist")).ServeHTTP(w, r)
+					return
+				}
+			}
+			http.ServeFile(w, r, "./src/dist/index.html")
+			return
+		})
 		log.Fatal(http.ListenAndServe(C.Server.ListenAddress, nil))
 	}()
 	return nil

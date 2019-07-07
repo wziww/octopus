@@ -2,9 +2,12 @@ package myredis
 
 import (
 	"crypto/md5"
+	"crypto/tls"
 	"fmt"
+	"net"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/go-redis/redis"
 )
@@ -50,17 +53,26 @@ var (
 )
 
 // AddSource 添加监控源
-func AddSource(name string, cfg *redis.Options) int {
+func AddSource(name string, opt *redis.Options) int {
+	opt.Dialer = func() (net.Conn, error) {
+		netDialer := &net.Dialer{
+			Timeout:   opt.DialTimeout,
+			KeepAlive: 5 * time.Minute,
+		}
+		if opt.TLSConfig == nil {
+			return netDialer.Dial(opt.Network, opt.Addr)
+		}
+		return tls.DialWithDialer(netDialer, opt.Network, opt.Addr, opt.TLSConfig)
+	}
 	n := fmt.Sprintf("%x", md5.Sum([]byte(name)))
 	REDISTYPE := "single"
 	var c interface{}
 	if redisSources[n] != nil {
 		return REDISALREADYEXISTS
 	}
-	c = redis.NewClient(cfg)
+	c = redis.NewClient(opt)
 	clusterInfoStr, e := c.(*redis.Client).Info("Cluster").Result()
 	if e != nil {
-		fmt.Println(clusterInfoStr)
 		return REDISINITERROR
 	}
 	var pingStr string
@@ -71,7 +83,8 @@ func AddSource(name string, cfg *redis.Options) int {
 			REDISTYPE = "cluster"
 			c.(*redis.Client).Close()
 			c = redis.NewClusterClient(&redis.ClusterOptions{
-				Addrs: []string{cfg.Addr},
+				Addrs: []string{opt.Addr},
+				// Dialer: opt.Dialer,
 			})
 			goto finish
 		}
@@ -90,7 +103,7 @@ finish:
 		redisSources[n] = &target{
 			Name:  name,
 			Type:  REDISTYPE,
-			Addrs: []string{cfg.Addr},
+			Addrs: []string{opt.Addr},
 			self:  c,
 		}
 		rw.Unlock()
@@ -216,9 +229,11 @@ func GetDetail(id string) []*DetailResult {
 			z.ForEachNode(func(c *redis.Client) error {
 				str, _ := c.Info("memory").Result()
 				for _, v := range result {
-					if v.ADDR == c.Options().Addr {
-						strArr := strings.Split(str, "\n")
+					oaddr := c.Options().Addr
+					if (len(v.ADDR) >= len(oaddr)) && v.ADDR[:len(oaddr)] == oaddr {
+						strArr := strings.Split(str, "\r")
 						for _, z := range strArr {
+							z = strings.Replace(z, "\n", "", -1)
 							if len(z) > len("used_memory:") && z[:len("used_memory:")] == "used_memory:" {
 								v.UsedMemory = z[len("used_memory:"):]
 								continue
