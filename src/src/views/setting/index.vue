@@ -10,7 +10,6 @@
       <router-link to="/setting/redis">
         <a-icon type="setting"/>
       </router-link>
-      <a-icon type="edit"/>
       <a-icon type="ellipsis"/>
     </template>
     <a-card-meta title="redis" description="redis 集群/单机 配置"></a-card-meta>

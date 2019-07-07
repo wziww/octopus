@@ -30,6 +30,8 @@ export default {
   name: "setting_redis",
   data() {
     statsDataT = [];
+    chartData = [];
+    timeData = [];
     this.lineChartSettings = {
       area: true,
       scale: [true, true],

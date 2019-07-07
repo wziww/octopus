@@ -19,6 +19,11 @@ func Trim(str string) string {
 		"\n", "", -1)
 }
 
+// ToLines ...
+func ToLines(str string) []string {
+	return strings.Split(str, "\n")
+}
+
 type target struct {
 	Name        string
 	Type        string
@@ -84,7 +89,7 @@ func AddSource(name string, opt *redis.Options) int {
 	}
 	var pingStr string
 	var pingError error
-	for _, v := range strings.Split(clusterInfoStr, "\n") {
+	for _, v := range ToLines(clusterInfoStr) {
 		if len(v) > len("cluster_enabled:") && v[:len("cluster_enabled:")] == "cluster_enabled:" &&
 			Trim(v[len("cluster_enabled:"):]) == "1" {
 			REDISTYPE = "cluster"
@@ -140,7 +145,7 @@ func GetServer(id string) []*Server {
 		v := &Server{
 			ADDR: z.Options().Addr,
 		}
-		for _, z := range strings.Split(str, "\n") {
+		for _, z := range ToLines(str) {
 			if len(z) > len("redis_version:") && z[:len("redis_version:")] == "redis_version:" {
 				v.RedisVersion = Trim(z[len("redis_version:"):])
 				continue
@@ -158,7 +163,7 @@ func GetServer(id string) []*Server {
 			v := &Server{
 				ADDR: c.Options().Addr,
 			}
-			for _, z := range strings.Split(str, "\n") {
+			for _, z := range ToLines(str) {
 				if len(z) > len("redis_version:") && z[:len("redis_version:")] == "redis_version:" {
 					v.RedisVersion = z[len("redis_version:"):]
 					continue
@@ -192,7 +197,7 @@ func GetConfig() interface{} {
 			if e != nil {
 				fmt.Println(e)
 			} else {
-				for _, x := range strings.Split(str, "\n") {
+				for _, x := range ToLines(str) {
 					if len(x) > 14 && x[:14] == "cluster_state:" {
 						v.Status = Trim(x[14:])
 					}
@@ -226,7 +231,7 @@ func GetDetail(id string) []*DetailResult {
 	case *redis.Client:
 		z := redisSources[id].self.(*redis.Client)
 		str, _ := z.Info("memory").Result()
-		strArr := strings.Split(str, "\n")
+		strArr := ToLines(str)
 		v := &DetailResult{
 			ADDR: z.Options().Addr,
 			Type: "single",
@@ -256,7 +261,7 @@ func GetDetail(id string) []*DetailResult {
 			fmt.Println(e)
 		} else {
 			var result []*DetailResult
-			for _, x := range strings.Split(str, "\n") {
+			for _, x := range ToLines(str) {
 				arr := strings.Split(x, " ")
 				if len(arr) < 3 {
 					continue
