@@ -131,6 +131,8 @@ func AddSource(name string, opt *redis.Options) int {
 	}
 finish:
 	if REDISTYPE == "cluster" {
+		// zz, ee := c.(*redis.ClusterClient).Get("test").Result()
+		// fmt.Println(zz, ee)
 		pingStr, pingError = c.(*redis.ClusterClient).Ping().Result()
 	} else {
 		pingStr, pingError = c.(*redis.Client).Ping().Result()
@@ -222,6 +224,7 @@ func GetConfig() interface{} {
 	}
 	return redisSources
 }
+
 func getMemory(z *redis.Client, v *DetailResult) {
 	str, _ := z.Info("memory").Result()
 	strArr := toLines(str)
@@ -260,14 +263,18 @@ func GetDetail(id string) []*DetailResult {
 		return []*DetailResult{v}
 	case *redis.ClusterClient:
 		z := redisSources[id].self.(*redis.ClusterClient)
-		str, e := z.ClusterNodes().Result()
-		if e != nil {
-			fmt.Println(e)
-		} else {
-			var result []*DetailResult
+		var result []*DetailResult
+		var (
+			resultAppendLock sync.Mutex
+		)
+		z.ForEachNode(func(c *redis.Client) error {
+			str, nodesError := c.ClusterNodes().Result()
+			if nodesError != nil {
+				return nodesError
+			}
 			for _, x := range toLines(str) {
 				arr := strings.Split(x, " ")
-				if len(arr) < 3 {
+				if len(arr) < 3 || strings.Index(x, "myself") == -1 {
 					continue
 				}
 				ID := arr[0]
@@ -288,6 +295,7 @@ func GetDetail(id string) []*DetailResult {
 						}
 					}
 				}
+				resultAppendLock.Lock()
 				result = append(result, &DetailResult{
 					ID:     ID,
 					ADDR:   ADDR,
@@ -298,27 +306,25 @@ func GetDetail(id string) []*DetailResult {
 					SLOT:   slot,
 					Type:   "cluster",
 				})
+				resultAppendLock.Unlock()
 			}
-			z.ForEachNode(func(c *redis.Client) error {
-				for _, v := range result {
-					oaddr := c.Options().Addr
-					if len(strings.Split(v.ADDR, oaddr)) > 1 {
-						getMemory(c, v)
-					}
-				}
-				return nil
-			})
-			servers := GetServer(id)
 			for _, v := range result {
-				for _, z := range servers {
-					if len(strings.Split(v.ADDR, z.ADDR)) > 1 {
-						v.VERSION = z.RedisVersion
-					}
+				oaddr := c.Options().Addr
+				if len(strings.Split(v.ADDR, oaddr)) > 1 {
+					getMemory(c, v)
 				}
 			}
-			return result
+			return nil
+		})
+		servers := GetServer(id)
+		for _, v := range result {
+			for _, z := range servers {
+				if len(strings.Split(v.ADDR, z.ADDR)) > 1 {
+					v.VERSION = z.RedisVersion
+				}
+			}
 		}
-		return nil
+		return result
 	}
 	return nil
 }

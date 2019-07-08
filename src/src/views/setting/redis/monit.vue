@@ -2,6 +2,12 @@
   <div>
     <div style="width: 100%;float: left;margin-bottom: 20px;">
       <a-alert
+        message="存在迁移中的 slots"
+        type="warning"
+        showIcon
+        :style="{display: reShardingSlots,maxWidth:'400px',float: 'left'}"
+      />
+      <a-alert
         message="存在节点未配置「最大可用内存」 : maxmemory"
         type="warning"
         showIcon
@@ -50,7 +56,11 @@
       <a-table-column title="epoth 值" data-index="epoth" key="epoth" v-if="type==='cluster'" />
       <a-table-column title="拥有 slot（槽点）" data-index="slot" key="slot" v-if="type==='cluster'">
         <template slot-scope="slot">
-          <a-tag v-for="each in slot" :key="each" color="#042b36">{{each}}</a-tag>
+          <a-tag
+            v-for="each in slot"
+            :key="each"
+            :color="each.indexOf('->-')!==-1||each.indexOf('-<-')!==-1?'#ff001d':'#042b36'"
+          >{{each}}</a-tag>
         </template>
       </a-table-column>
       <a-table-column
@@ -110,6 +120,7 @@ export default {
     data = [];
     let maxmemoryWarning = "none";
     let usedmemoryWarning = "none";
+    let reShardingSlots = "none";
     const that = this;
     t = setInterval(() => {
       this.$socket.sendObj({
@@ -136,10 +147,16 @@ export default {
             ],
             epoth: i.EPOTH,
             slot: i.SLOT.split(" ").filter(e => {
+              console.log(e);
               if (e.indexOf("-") !== -1 && Number.isInteger(Number(e[0]))) {
                 return e;
+              } else if ("" + e === "" + Number(e)) {
+                return e;
+              } else if (e.indexOf("->-") !== -1 || e.indexOf("-<-") !== -1) {
+                // Migrating - Importing
+                that.reShardingSlots = "";
+                return e;
               }
-              if ("" + e === "" + Number(e)) return e;
             }),
             slotPercent: (() => {
               let has = 0;
@@ -206,7 +223,8 @@ export default {
       index,
       type,
       maxmemoryWarning,
-      usedmemoryWarning
+      usedmemoryWarning,
+      reShardingSlots
       // chartData
     };
   },
