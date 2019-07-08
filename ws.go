@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"octopus/myredis"
 	"sync"
-	"time"
 
 	"github.com/go-redis/redis"
 	"github.com/google/uuid"
@@ -20,7 +19,6 @@ var upgrader = websocket.Upgrader{
 		return true
 	},
 }
-var limitDetail map[string]int64
 var (
 	mutex sync.Mutex
 )
@@ -30,9 +28,6 @@ var (
 
 func ws(w http.ResponseWriter, r *http.Request) {
 	mutex.Lock()
-	if limitDetail == nil {
-		limitDetail = make(map[string]int64)
-	}
 	mutex.Unlock()
 	c, err := upgrader.Upgrade(w, r, nil)
 	connID := fmt.Sprintf("%x", md5.Sum([]byte(uuid.New().String())))
@@ -46,7 +41,6 @@ func ws(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			e := err.(*websocket.CloseError)
 			if e.Code == websocket.CloseGoingAway { // conn close
-				delete(limitDetail, connID)
 			}
 			break
 		}
@@ -86,16 +80,8 @@ func handle(message []byte, connID string) []byte {
 	json.Unmarshal(message, b)
 	routerPath := b.Func
 	if routerAll[routerPath] != nil {
-		if routerPath != "/config/redis/detail" {
-			return routerAll[routerPath](b.Data)
-		}
-		if limitDetail[connID] == 0 || (time.Now().UnixNano()/1e6-limitDetail[connID]) > 1000/10 {
-			limitDetail[connID] = time.Now().UnixNano() / 1e6
-			return routerAll[routerPath](b.Data)
-		}
-		goto end
+		return routerAll[routerPath](b.Data)
 	}
-end:
 	return []byte("404")
 }
 func init() {
