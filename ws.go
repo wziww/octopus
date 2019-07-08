@@ -153,7 +153,7 @@ func init() {
 			ID string `json:"id"`
 		}{}
 		json.Unmarshal([]byte(data), c)
-		result := myredis.GetSTATS(c.ID)
+		result := myredis.GetStats(c.ID)
 		bytes, _ := json.Marshal(&socketReturn{
 			Type: "/redis/stats",
 			Data: result,
