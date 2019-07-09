@@ -30,7 +30,11 @@
       <a-button class="each-chose" :type="index[5]" @click="chose(5)">10 min</a-button>
     </div>
     <a-table :scroll="{ x: 1000 }" :dataSource="data" style="float: left;width: 100%;">
-      <a-table-column title="address" data-index="address" key="address" />
+      <a-table-column title="address" data-index="address" key="address">
+        <template slot-scope="address">
+          <div style="width: 100px;word-wrap:break-word;" :key="address">{{address}}</div>
+        </template>
+      </a-table-column>
       <a-table-column title="version" data-index="version" key="version">
         <template slot-scope="version">
           <a-tag :color="version.color">{{version.value}}</a-tag>
@@ -38,12 +42,20 @@
       </a-table-column>
       <a-table-column title="id" data-index="id" key="id" v-if="type==='cluster'">
         <template slot-scope="id">
-          <div v-for="each in split(id)" style="width: 100%;" :key="each">{{each}}</div>
+          <div
+            v-for="each in split(id)"
+            style="width: 100px;word-wrap:break-word;"
+            :key="each"
+          >{{each}}</div>
         </template>
       </a-table-column>
       <a-table-column title="follow" data-index="follow" key="follow" v-if="type==='cluster'">
         <template slot-scope="follow">
-          <div v-for="each in split(follow)" style="width: 100%;" :key="each">{{each}}</div>
+          <div
+            v-for="each in split(follow)"
+            style="width: 100px;word-wrap:break-word;"
+            :key="each"
+          >{{each}}</div>
         </template>
       </a-table-column>
       <a-table-column title="角色" data-index="role" key="role" v-if="type==='cluster'">
@@ -57,6 +69,7 @@
       <a-table-column title="拥有 slot（槽点）" data-index="slot" key="slot" v-if="type==='cluster'">
         <template slot-scope="slot">
           <a-tag
+            @click="slotsClick(each)"
             v-for="each in slot"
             :key="each"
             :color="each.indexOf('->-')!==-1||each.indexOf('-<-')!==-1?'#ff001d':'#042b36'"
@@ -147,7 +160,6 @@ export default {
             ],
             epoth: i.EPOTH,
             slot: i.SLOT.split(" ").filter(e => {
-              console.log(e);
               if (e.indexOf("-") !== -1 && Number.isInteger(Number(e[0]))) {
                 return e;
               } else if ("" + e === "" + Number(e)) {
@@ -229,6 +241,9 @@ export default {
     };
   },
   methods: {
+    slotsClick(e) {
+      console.log(e);
+    },
     chose(x) {
       const that = this;
       index = [
@@ -312,11 +327,7 @@ export default {
     },
     split: str => {
       if (typeof str !== "string") return [];
-      const len = str.length;
-      const arr = [];
-      for (let i = 0; i < len; i += 10) {
-        arr.push(str.substr(i, 10));
-      }
+      const arr = [str];
       return arr;
     }
   },
