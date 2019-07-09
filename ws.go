@@ -94,6 +94,7 @@ func init() {
 		return bytes
 	})
 	Router("/config/redis/add", func(data string) []byte {
+		return []byte("404")
 		c := &newConfig{}
 		json.Unmarshal([]byte(data), c)
 		if c.Name != "" && c.Type != "" && c.URL != "" {

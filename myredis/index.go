@@ -310,8 +310,10 @@ func GetDetail(id string) []*DetailResult {
 			}
 			for _, v := range result {
 				oaddr := c.Options().Addr
-				if len(strings.Split(v.ADDR, oaddr)) > 1 {
-					getMemory(c, v)
+				if v != nil {
+					if len(strings.Split(v.ADDR, oaddr)) > 1 {
+						getMemory(c, v)
+					}
 				}
 			}
 			return nil
