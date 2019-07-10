@@ -3,7 +3,7 @@
     <a-button type="primary" @click="showDrawer" style="float: left;margin-bottom: 10px;">
       <a-icon type="plus"/>新增配置
     </a-button>
-    <a-drawer
+    <!-- <a-drawer
       title="添加监控"
       :width="720"
       @close="onClose"
@@ -50,7 +50,7 @@
         <a-button :style="{marginRight: '8px'}" @click="onClose">Cancel</a-button>
         <a-button @click="onSubmit" type="primary">Submit</a-button>
       </div>
-    </a-drawer>
+    </a-drawer> -->
     <a-list :grid="{ column: 4 }" :dataSource="Data" style="float: left;width: 100%;">
       <a-list-item slot="renderItem" slot-scope="item">
         <a-card :title="'Pod:' +item.name">
@@ -142,23 +142,23 @@ export default {
     }
   },
   methods: {
-    showDrawer() {
-      this.visible = true;
-    },
-    onClose() {
-      this.visible = false;
-    },
-    onSubmit() {
-      let obj = this.form.getFieldsValue();
-      this.$socket.sendObj({
-        Func: "/config/redis/add",
-        Data: JSON.stringify(obj)
-      });
-      this.visible = false;
-      this.$socket.sendObj({
-        Func: "/config/redis"
-      });
-    },
+    // showDrawer() {
+    //   this.visible = true;
+    // },
+    // onClose() {
+    //   this.visible = false;
+    // },
+    // onSubmit() {
+    //   let obj = this.form.getFieldsValue();
+    //   this.$socket.sendObj({
+    //     Func: "/config/redis/add",
+    //     Data: JSON.stringify(obj)
+    //   });
+    //   this.visible = false;
+    //   this.$socket.sendObj({
+    //     Func: "/config/redis"
+    //   });
+    // },
     del(id) {
       this.$socket.sendObj({
         Func: "/config/redis/del",

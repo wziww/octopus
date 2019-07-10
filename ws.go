@@ -9,7 +9,6 @@ import (
 	"octopus/myredis"
 	"sync"
 
-	"github.com/go-redis/redis"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 )
@@ -85,24 +84,6 @@ func init() {
 		bytes, _ := json.Marshal(&socketReturn{
 			Type: "/config/redis",
 			Data: myredis.GetConfig(),
-		})
-		return bytes
-	})
-	Router("/config/redis/add", func(data string) []byte {
-		return []byte("404")
-		c := &newConfig{}
-		json.Unmarshal([]byte(data), c)
-		if c.Name != "" && c.Type != "" && c.URL != "" {
-			switch c.Type {
-			case "cluster":
-				myredis.AddSource(c.Name, &redis.Options{
-					Addr: c.URL,
-				})
-			}
-		}
-		bytes, _ := json.Marshal(&socketReturn{
-			Type: "/config/redis/add",
-			Data: "success",
 		})
 		return bytes
 	})
