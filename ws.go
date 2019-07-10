@@ -20,15 +20,10 @@ var upgrader = websocket.Upgrader{
 	},
 }
 var (
-	mutex sync.Mutex
-)
-var (
 	sendLock sync.Mutex
 )
 
 func ws(w http.ResponseWriter, r *http.Request) {
-	mutex.Lock()
-	mutex.Unlock()
 	c, err := upgrader.Upgrade(w, r, nil)
 	connID := fmt.Sprintf("%x", md5.Sum([]byte(uuid.New().String())))
 	if err != nil {
