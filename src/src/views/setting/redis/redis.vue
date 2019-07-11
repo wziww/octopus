@@ -70,7 +70,7 @@
               style="float: left;"
             >{{item.data.Status}}</a-tag>
           </div>
-          <router-link :to="'/setting/redis_monit?id='+item.name" class="hd">
+          <router-link :to="'/setting/clusterSlots?id='+item.name" class="hd">
             <a-icon type="table"/>
             <span>节点</span>
           </router-link>
@@ -78,9 +78,9 @@
             <a-icon type="dashboard"/>
             <span>监控</span>
           </router-link>
-          <router-link :to="'/setting/redis_slow_log?id='+item.name" class="hd">
-            <a-icon type="ordered-list"/>
-            <span>日志</span>
+          <router-link :to="'/setting/redis_dev?id='+item.name" class="hd">
+            <a-icon type="code"/>
+            <span>dev</span>
           </router-link>
           <a-icon type="delete" class="hd" @click="del(item.name)"/>
         </a-card>

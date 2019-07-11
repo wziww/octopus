@@ -87,6 +87,56 @@ func init() {
 		})
 		return bytes
 	})
+	Router("/config/redis/clusterNodes", func(data string) []byte {
+		c := &struct {
+			ID string `json:"id"`
+		}{}
+		json.Unmarshal([]byte(data), c)
+		bytes, _ := json.Marshal(&socketReturn{
+			Type: "/config/redis/clusterNodes",
+			Data: myredis.GetClusterNodes(c.ID),
+		})
+		return bytes
+	})
+	Router("/config/redis/clusterReplicate", func(data string) []byte {
+		c := &struct {
+			ID     string `json:"id"`
+			Host   string `json:"host"`
+			Port   string `json:"port"`
+			NodeID string `json:"nodeid"`
+		}{}
+		json.Unmarshal([]byte(data), c)
+		bytes, _ := json.Marshal(&socketReturn{
+			Type: "/config/redis/clusterReplicate",
+			Data: myredis.ClusterReplicate(c.ID, c.Host, c.Port, c.NodeID),
+		})
+		return bytes
+	})
+	Router("/config/redis/clusterForget", func(data string) []byte {
+		c := &struct {
+			ID     string `json:"id"`
+			NodeID string `json:"nodeid"`
+		}{}
+		json.Unmarshal([]byte(data), c)
+		bytes, _ := json.Marshal(&socketReturn{
+			Type: "/config/redis/clusterForget",
+			Data: myredis.ClusterForget(c.ID, c.NodeID),
+		})
+		return bytes
+	})
+	Router("/config/redis/clusterMeet", func(data string) []byte {
+		c := &struct {
+			ID   string `json:"id"`
+			Host string `json:"host"`
+			Port string `json:"port"`
+		}{}
+		json.Unmarshal([]byte(data), c)
+		bytes, _ := json.Marshal(&socketReturn{
+			Type: "/config/redis/clusterMeet",
+			Data: myredis.ClusterMeet(c.ID, c.Host, c.Port),
+		})
+		return bytes
+	})
 	Router("/config/redis/detail", func(data string) []byte {
 		c := &struct {
 			ID string `json:"id"`

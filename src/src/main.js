@@ -9,9 +9,12 @@ import '@a/css/animate.styl';
 // import plugins from './plugins';
 import Antd from 'ant-design-vue';
 import 'ant-design-vue/dist/antd.css';
+import 'highlight.js/styles/a11y-dark.css';
 import VueNativeSock from 'vue-native-websocket';
+import VueHighlightJS from 'vue-highlightjs';
 import moment from 'vue-moment';
 Vue.use(VCharts);
+Vue.use(VueHighlightJS);
 Vue.use(moment);
 Vue.use(VueNativeSock, 'ws://0.0.0.0:8081/v1/websocket', {
   format: 'json', reconnection: true

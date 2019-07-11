@@ -1,5 +1,36 @@
 <template>
   <div>
+    <a-tooltip
+      placement="topLeft"
+      title="此处仅展示与 slot 有关的节点信息"
+      :getPopupContainer="getPopupContainer"
+      style="float: left;"
+    >
+      <a-button type="primary">说明</a-button>
+    </a-tooltip>
+    <router-link style="float: left;margin-left: 10px;" :to="'/setting/redis_dev?id='+$route.query.id" class="hd">
+      <a-button type="danger">dev</a-button>
+    </router-link>
+    <div style="width: 100%;float: left;margin-bottom: 20px;">
+      <a-alert
+        message="存在迁移中的 slots"
+        type="warning"
+        showIcon
+        :style="{display: reShardingSlots,maxWidth:'400px',float: 'left'}"
+      />
+      <a-alert
+        message="存在节点未配置「最大可用内存」 : maxmemory"
+        type="warning"
+        showIcon
+        :style="{display: maxmemoryWarning,width:'400px',float: 'left'}"
+      />
+      <a-alert
+        message="存在节点内存使用达 90% +"
+        type="warning"
+        showIcon
+        :style="{display: usedmemoryWarning,width:'400px',float: 'left'}"
+      />
+    </div>
     <div style="width: 100%;float: left;margin-bottom: 20px;">
       <span class="each-chose" style="font-size: 20px;font-weight: border;">Refresh Every :</span>
       <a-button class="each-chose" :type="index[0]" @click="chose(0)">1 s</a-button>
@@ -10,53 +41,86 @@
       <a-button class="each-chose" :type="index[5]" @click="chose(5)">10 min</a-button>
     </div>
     <a-table :scroll="{ x: 1000 }" :dataSource="data" style="float: left;width: 100%;">
-      <a-table-column title="address" data-index="address" key="address"/>
-      <a-table-column title="id" data-index="id" key="id">
+      <a-table-column title="address" data-index="address" key="address">
+        <template slot-scope="address">
+          <div style="width: 100px;word-wrap:break-word;" :key="address">{{address}}</div>
+        </template>
+      </a-table-column>
+      <a-table-column title="version" data-index="version" key="version">
+        <template slot-scope="version">
+          <a-tag :color="version.color">{{version.value}}</a-tag>
+        </template>
+      </a-table-column>
+      <a-table-column title="id" data-index="id" key="id" v-if="type==='cluster'">
         <template slot-scope="id">
-          <div v-for="each in split(id)" style="width: 100%;" :key="each">{{each}}</div>
+          <div
+            v-for="each in split(id)"
+            style="width: 100px;word-wrap:break-word;"
+            :key="each"
+          >{{each}}</div>
         </template>
       </a-table-column>
-      <a-table-column title="follow" data-index="follow" key="follow">
+      <a-table-column title="follow" data-index="follow" key="follow" v-if="type==='cluster'">
         <template slot-scope="follow">
-          <div v-for="each in split(follow)" style="width: 100%;" :key="each">{{each}}</div>
+          <div
+            v-for="each in split(follow)"
+            style="width: 100px;word-wrap:break-word;"
+            :key="each"
+          >{{each}}</div>
         </template>
       </a-table-column>
-      <a-table-column title="角色" data-index="role" key="role">
+      <a-table-column title="角色" data-index="role" key="role" v-if="type==='cluster'">
         <template slot-scope="role">
           <span>
             <a-tag v-for="each in role" :color="each.COLOR" :key="each.ROLE">{{each.ROLE}}</a-tag>
           </span>
         </template>
       </a-table-column>
-      <a-table-column title="epoth 值" data-index="epoth" key="epoth"/>
-      <a-table-column title="拥有 slot（槽点）" data-index="slot" key="slot">
+      <a-table-column title="epoth 值" data-index="epoth" key="epoth" v-if="type==='cluster'" />
+      <a-table-column title="拥有 slot（槽点）" data-index="slot" key="slot" v-if="type==='cluster'">
         <template slot-scope="slot">
-          <a-tag v-for="each in slot" :key="each" color="#042b36">{{each}}</a-tag>
+          <a-tag
+            @click="slotsClick(each)"
+            v-for="each in slot"
+            :key="each"
+            :color="each.indexOf('->-')!==-1||each.indexOf('-<-')!==-1?'#ff001d':'#042b36'"
+          >{{each}}</a-tag>
         </template>
       </a-table-column>
-      <a-table-column title="slot 拥有比例" data-index="slotPercent" key="slotPercent">
+      <a-table-column
+        title="slot 拥有比例"
+        data-index="slotPercent"
+        key="slotPercent"
+        v-if="type==='cluster'"
+      >
         <template slot-scope="slotPercent">
-          <a-progress type="circle" :percent="parseInt(slotPercent * 100)" :width="80"/>
+          <a-progress type="circle" :percent="parseInt(slotPercent * 100)" :width="80" />
         </template>
       </a-table-column>
       <a-table-column title="占用内存" data-index="UsedMemory" key="UsedMemory">
         <template slot-scope="UsedMemory">{{UsedMemory}}M</template>
       </a-table-column>
       <a-table-column title="可用内存" data-index="Maxmemory" key="Maxmemory">
-        <template slot-scope="Maxmemory">{{Maxmemory}}M</template>
+        <template slot-scope="Maxmemory">
+          <span :style="{color: Maxmemory.color}">{{Maxmemory.value}}M</span>
+        </template>
       </a-table-column>
       <a-table-column title="系统总内存" data-index="TotalSystemMemory" key="TotalSystemMemory">
         <template slot-scope="TotalSystemMemory">{{TotalSystemMemory}}M</template>
       </a-table-column>
       <a-table-column title="内存占用比例" data-index="memoryPercent" key="memoryPercent">
         <template slot-scope="memoryPercent">
-          <a-progress type="circle" :percent="parseInt(memoryPercent * 100)" :width="80"/>
+          <a-progress type="circle" :percent="parseInt(memoryPercent * 100)" :width="80" />
         </template>
       </a-table-column>
       <a-table-column title="状态" data-index="state" key="state">
         <template slot-scope="state">
           <span>
-            <a-tag v-for="each in state" :color="each.COLOR" :key="each.STATE">{{each.STATE}}</a-tag>
+            <a-tag
+              v-for="each in state"
+              :color="each.COLOR"
+              :key="each.STATE"
+            >{{each.STATE?each.STATE:"disconnected"}}</a-tag>
           </span>
         </template>
       </a-table-column>
@@ -70,12 +134,17 @@
 </template>
 <script>
 let data = [];
+let type = "cluster";
 let interTime = 1000;
 let t = null;
 let index = ["primary", "default", "default", "default", "default", "default"];
 export default {
   name: "setting_redis",
   data() {
+    data = [];
+    let maxmemoryWarning = "none";
+    let usedmemoryWarning = "none";
+    let reShardingSlots = "none";
     const that = this;
     t = setInterval(() => {
       this.$socket.sendObj({
@@ -88,6 +157,7 @@ export default {
       if (d.Type === "/config/redis/detail") {
         data = [];
         for (let i of d.Data) {
+          that.type = i.Type;
           data.push({
             key: i.ID,
             id: i.ID,
@@ -101,19 +171,35 @@ export default {
             ],
             epoth: i.EPOTH,
             slot: i.SLOT.split(" ").filter(e => {
-              if (e.indexOf("-") !== -1) return e;
+              if (e.indexOf("-") !== -1 && Number.isInteger(Number(e[0]))) {
+                return e;
+              } else if ("" + e === "" + Number(e)) {
+                return e;
+              } else if (e.indexOf("->-") !== -1 || e.indexOf("-<-") !== -1) {
+                // Migrating - Importing
+                that.reShardingSlots = "";
+                return e;
+              }
             }),
             slotPercent: (() => {
               let has = 0;
               for (let z of i.SLOT.split(" ")) {
-                if (z.indexOf("-") !== -1) {
+                if (z.indexOf("-") !== -1 && Number.isInteger(Number(z[0]))) {
                   has += Number(z.split("-")[1]) - Number(z.split("-")[0]);
+                } else if ("" + z === "" + Number(z)) {
+                  has++;
                 }
               }
               return has / 16383;
             })(),
             memoryPercent: (() => {
-              return Number(i.UsedMemory) / Number(i.Maxmemory);
+              const percent = Number(i.UsedMemory) / Number(i.Maxmemory);
+              if (Infinity !== percent && percent >= 0.9) {
+                if (parseInt(Math.random() * 100) > 80) {
+                  that.usedmemoryWarning = "";
+                }
+              }
+              return percent;
             })(),
             state: [
               {
@@ -121,7 +207,24 @@ export default {
                 COLOR: i.STATE === "connected" ? "#00c94d" : "RED"
               }
             ],
-            Maxmemory: (i.Maxmemory / 1024 / 1024).toFixed(2),
+            version: (() => {
+              return {
+                color: i.VERSION.startsWith("4.") ? "#00c94d" : "#2593fc",
+                value: i.VERSION
+              };
+            })(),
+            Maxmemory: (() => {
+              const tmp = i.Maxmemory / 1024 / 1024;
+              if (tmp === 0) {
+                if (parseInt(Math.random() * 100) > 80) {
+                  that.maxmemoryWarning = "";
+                }
+              }
+              return {
+                value: tmp.toFixed(2),
+                color: tmp < 1 ? "red" : ""
+              };
+            })(),
             UsedMemory: (i.UsedMemory / 1024 / 1024).toFixed(2),
             TotalSystemMemory: (i.TotalSystemMemory / 1024 / 1024).toFixed(2),
             operation: []
@@ -140,11 +243,21 @@ export default {
     };
     return {
       data,
-      index
+      index,
+      type,
+      maxmemoryWarning,
+      usedmemoryWarning,
+      reShardingSlots
       // chartData
     };
   },
   methods: {
+    getPopupContainer(trigger) {
+      return trigger.parentElement;
+    },
+    slotsClick(e) {
+      console.log(e);
+    },
     chose(x) {
       const that = this;
       index = [
@@ -228,11 +341,7 @@ export default {
     },
     split: str => {
       if (typeof str !== "string") return [];
-      const len = str.length;
-      const arr = [];
-      for (let i = 0; i < len; i += 10) {
-        arr.push(str.substr(i, 10));
-      }
+      const arr = [str];
       return arr;
     }
   },

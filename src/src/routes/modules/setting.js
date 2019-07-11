@@ -1,16 +1,16 @@
-const RedisSlowLog = {
-  path: '/setting/redis_slow_log',
-  name: 'setting_redis_slow_log',
-  component: () => import('@v/setting/redis/slow_log.vue'),
+const RedisDev = {
+  path: '/setting/redis_dev',
+  name: 'setting_redis_dev',
+  component: () => import('@v/setting/redis/dev.vue'),
   meta: {
-    title: '数据源-节点列表',
+    title: '数据源-运维模式',
     Index: '3'
   }
 };
 const RedisMonit = {
-  path: '/setting/redis_monit',
+  path: '/setting/clusterSlots',
   name: 'setting_redis_monit',
-  component: () => import('@v/setting/redis/monit.vue'),
+  component: () => import('@v/setting/redis/clusterSlots.vue'),
   meta: {
     title: '数据源-节点列表',
     Index: '3'
@@ -49,5 +49,5 @@ export {
   RedisPage,
   RedisMonit,
   RedisMonitMain,
-  RedisSlowLog
+  RedisDev
 };

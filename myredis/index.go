@@ -93,6 +93,60 @@ func getFromRDSStr(str1, str2 string) string {
 	return ""
 }
 
+// ClusterMeet ...
+func ClusterMeet(id string, host string, port string) string {
+	if redisSources[id] == nil {
+		return "error"
+	}
+	switch redisSources[id].self.(type) {
+	case *redis.ClusterClient:
+		z := redisSources[id].self.(*redis.ClusterClient)
+		str, err := z.ClusterMeet(host, port).Result()
+		if err == nil {
+			return str
+		}
+		return err.Error()
+	}
+	return "error"
+}
+
+// ClusterForget ...
+func ClusterForget(id string, nodeid string) string {
+	if redisSources[id] == nil {
+		return "error"
+	}
+	switch redisSources[id].self.(type) {
+	case *redis.ClusterClient:
+		z := redisSources[id].self.(*redis.ClusterClient)
+		str, err := z.ClusterForget(nodeid).Result()
+		if err == nil {
+			return str
+		}
+		return err.Error()
+	}
+	return "error"
+}
+
+// ClusterReplicate ...
+func ClusterReplicate(id, host, port, nodeid string) string {
+	if redisSources[id] == nil {
+		return "error"
+	}
+	switch redisSources[id].self.(type) {
+	case *redis.ClusterClient:
+		tmpClient := redis.NewClient(&redis.Options{
+			Addr: host + ":" + port,
+		})
+		defer tmpClient.Close()
+		result, err := tmpClient.ClusterReplicate(nodeid).Result()
+		if err == nil {
+			return result
+		}
+		return err.Error()
+	}
+	return "error"
+}
+
 // AddSource 添加监控源
 func AddSource(name string, opt *redis.Options) int {
 	opt.Dialer = func() (net.Conn, error) {
@@ -329,6 +383,21 @@ func GetDetail(id string) []*DetailResult {
 	return nil
 }
 
+// GetClusterNodes 获取节点详情
+func GetClusterNodes(id string) string {
+	if redisSources[id] == nil {
+		return ""
+	}
+	switch redisSources[id].Type {
+	case "single":
+		return ""
+	case "cluster":
+		z := redisSources[id].self.(*redis.ClusterClient)
+		result, _ := z.ClusterNodes().Result()
+		return result
+	}
+	return ""
+}
 func getStats(z *redis.Client) *Stats {
 	str, _ := z.Info("stats").Result()
 	strArr := strings.Split(str, "\n")
