@@ -72,6 +72,7 @@
           <a-button style="width: 30%;float: left;" class="submit" type="primary">提交</a-button>
         </a-popconfirm>
       </a-drawer>
+      <a-divider orientation="left">slots 操作</a-divider>
       <a-button class="eachHandle" type="primary">未分配 slots 计算</a-button>
     </div>
   </div>
