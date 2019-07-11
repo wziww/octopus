@@ -38,7 +38,7 @@
     </a-drawer>
     <a-button class="eachHandle" @click="clusterForget" type="primary">删除节点</a-button>
     <a-drawer
-      title="删除"
+      title="删除节点"
       placement="top"
       @close="clusterForgetClose"
       :closable="true"
@@ -191,7 +191,7 @@ export default {
       this.newport = e.target.value;
     },
     clusterForgetClose() {
-      this.clusterReplicateShow = false;
+      this.clusterForgetShow = false;
     },
     clusterMeetClose() {
       this.clusterMeetShow = false;
