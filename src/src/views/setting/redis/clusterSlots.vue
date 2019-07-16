@@ -8,7 +8,11 @@
     >
       <a-button type="primary">说明</a-button>
     </a-tooltip>
-    <router-link style="float: left;margin-left: 10px;" :to="'/setting/redis_dev?id='+$route.query.id" class="hd">
+    <router-link
+      style="float: left;margin-left: 10px;"
+      :to="'/setting/redis_dev?id='+$route.query.id"
+      class="hd"
+    >
       <a-button type="danger">dev</a-button>
     </router-link>
     <div style="width: 100%;float: left;margin-bottom: 20px;">
@@ -48,7 +52,9 @@
       </a-table-column>
       <a-table-column title="version" data-index="version" key="version">
         <template slot-scope="version">
-          <a-tag :color="version.color">{{version.value}}</a-tag>
+          <a-tag
+            :color="version.value===''?'red':version.color"
+          >{{version.value===""?"未知":version.value}}</a-tag>
         </template>
       </a-table-column>
       <a-table-column title="id" data-index="id" key="id" v-if="type==='cluster'">
