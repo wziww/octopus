@@ -1,10 +1,14 @@
 [server]
-listen_address="0.0.0.0:8080"
+listen_address="0.0.0.0:8081"
+# [[redis]]
+#   name="impress"
+#   address=["10.0.6.49:6379"]
+# [[redis]]
+#   name="test"
+#   address=["0.0.0.0:6379"]
+#   db=0
 [[redis]]
-  name="impress"
-  address=["10.0.6.49:6379"]
-[[redis]]
-  name="test"
-  address=["0.0.0.0:6379"]
+  name="6381"
+  address=["0.0.0.0:6381"]
   db=0
 

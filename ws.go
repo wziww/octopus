@@ -87,6 +87,17 @@ func init() {
 		})
 		return bytes
 	})
+	Router("/config/redis/clusterSlots", func(data string) []byte {
+		c := &struct {
+			ID string `json:"id"`
+		}{}
+		json.Unmarshal([]byte(data), c)
+		bytes, _ := json.Marshal(&socketReturn{
+			Type: "/config/redis/clusterSlots",
+			Data: myredis.ClusterSlotsStats(c.ID),
+		})
+		return bytes
+	})
 	Router("/config/redis/clusterNodes", func(data string) []byte {
 		c := &struct {
 			ID string `json:"id"`
@@ -98,6 +109,36 @@ func init() {
 		})
 		return bytes
 	})
+	Router("/config/redis/setSlots", func(data string) []byte {
+		c := &struct {
+			ID    string `json:"id"`
+			Host  string `json:"host"`
+			Port  string `json:"port"`
+			Start int64  `json:"start"`
+			End   int64  `json:"end"`
+		}{}
+		json.Unmarshal([]byte(data), c)
+		bytes, _ := json.Marshal(&socketReturn{
+			Type: "/config/redis/setSlots",
+			Data: myredis.ClusterSlotsSet(c.ID, c.Host, c.Port, c.Start, c.End),
+		})
+		return bytes
+	})
+	// Router("/config/redis/delSlots", func(data string) []byte {
+	// 	c := &struct {
+	// 		ID    string `json:"id"`
+	// 		Host  string `json:"host"`
+	// 		Port  string `json:"port"`
+	// 		Start int64  `json:"start"`
+	// 		End   int64  `json:"end"`
+	// 	}{}
+	// 	json.Unmarshal([]byte(data), c)
+	// 	bytes, _ := json.Marshal(&socketReturn{
+	// 		Type: "/config/redis/delSlots",
+	// 		Data: myredis.ClusterSlotsDel(c.ID, c.Host, c.Port, c.Start, c.End),
+	// 	})
+	// 	return bytes
+	// })
 	Router("/config/redis/clusterReplicate", func(data string) []byte {
 		c := &struct {
 			ID     string `json:"id"`

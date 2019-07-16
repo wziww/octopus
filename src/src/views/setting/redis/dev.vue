@@ -11,7 +11,11 @@
         <a-button type="primary">集群列表</a-button>
       </router-link>
       <a-divider orientation="left">节点操作</a-divider>
-      <a-tooltip placement="topLeft" title="id ip:端口[@总线端口] 角色 - " style="float: left;">
+      <a-tooltip
+        placement="topLeft"
+        title="<id> <ip:port> <flags> <master> <ping-sent> <pong-recv> <config-epoch> <link-state> <slot> <slot> ... <slot>"
+        style="float: left;"
+      >
         <a-button class="eachHandle" @click="reloadClusterNodes" type="primary">刷新节点信息</a-button>
       </a-tooltip>
       <a-button class="eachHandle" @click="clusterMeet" type="primary">添加节点</a-button>
@@ -73,7 +77,59 @@
         </a-popconfirm>
       </a-drawer>
       <a-divider orientation="left">slots 操作</a-divider>
-      <a-button class="eachHandle" type="primary">未分配 slots 计算</a-button>
+      <a-button class="eachHandle" type="primary" @click="slotsStats">未分配 slots 计算</a-button>
+      <a-button class="eachHandle" @click="slotsSet" type="primary">slots 分配</a-button>
+      <a-drawer
+        title="slots 分配"
+        placement="top"
+        @close="slotsSetClose"
+        :closable="true"
+        :visible="slotsSetShow"
+        height="400"
+      >
+        <div class="each-input">
+          <a-input placeholder="需要设置为从节点的 host" @change="inputSlotsHost" />
+        </div>
+        <div class="each-input">
+          <a-input placeholder="需要设置为从节点的 port" @change="inputSlotsPort" />
+        </div>
+        <div class="each-input">
+          <a-input type="number" placeholder="slots 起（0-16383）" @change="inputSlotsStart" />
+        </div>
+        <div class="each-input">
+          <a-input type="number" placeholder="slots 止（0-16383）" @change="inputSlotsEnd" />
+        </div>
+        <a-popconfirm @confirm="confirmSlotsSet" :title="'确认进行 slots 分配？'">
+          <a-icon slot="icon" type="question-circle-o" style="color: red" />
+          <a-button style="width: 30%;float: left;" class="submit" type="primary">提交</a-button>
+        </a-popconfirm>
+      </a-drawer>
+      <!-- <a-button class="eachHandle" @click="slotsDel" type="primary">slots 删除</a-button>
+      <a-drawer
+        title="slots 删除"
+        placement="top"
+        @close="slotsDelClose"
+        :closable="true"
+        :visible="slotsDelShow"
+        height="400"
+      >
+        <div class="each-input">
+          <a-input placeholder="需要设置为从节点的 host" @change="inputSlotsDelHost" />
+        </div>
+        <div class="each-input">
+          <a-input placeholder="需要设置为从节点的 port" @change="inputSlotsDelPort" />
+        </div>
+        <div class="each-input">
+          <a-input type="number" placeholder="slots 起（0-16383）" @change="inputSlotsDelStart" />
+        </div>
+        <div class="each-input">
+          <a-input type="number" placeholder="slots 止（0-16383）" @change="inputSlotsDelEnd" />
+        </div>
+        <a-popconfirm @confirm="confirmSlotsDel" :title="'确认进行 slots 删除'">
+          <a-icon slot="icon" type="question-circle-o" style="color: red" />
+          <a-button style="width: 30%;float: left;" class="submit" type="primary">提交</a-button>
+        </a-popconfirm>
+      </a-drawer>-->
     </div>
   </div>
 </template>
@@ -90,13 +146,11 @@ export default {
     });
     this.$socket.onmessage = da => {
       const d = JSON.parse(da.data);
-      if (typeof d.Data !== "string") {
-        return;
-      }
       let z = [];
-      z = d.Data.split("\n");
       if (d.Type === "/config/redis/clusterNodes") {
-        data.push("// 节点信息");
+        data.push(
+          "// 节点信息 <id> <ip:port> <role> <follow-node-id> <ping-sent> <pong-recv> <config-epoch> <link-state> <slots> ..."
+        );
       }
       if (d.Type === "/config/redis/clusterMeet") {
         data.push("// 节点添加");
@@ -104,6 +158,62 @@ export default {
       if (d.Type === "/config/redis/clusterForget") {
         data.push("// 节点删除");
       }
+      if (d.Type === "/config/redis/setSlots") {
+        data.push("// slots 添加");
+      }
+      if (d.Type === "/config/redis/delSlots") {
+        data.push("// slots 删除");
+      }
+      if (d.Type === "/config/redis/clusterSlots") {
+        const max = 16384;
+        let availableSlots = [];
+        let usedSlots = [];
+        data.push("// slots 统计");
+        let used = 0;
+        const tmpArray = [];
+        for (let i = 0; i < d.Data.length; i++) {
+          const t = d.Data[i];
+          usedSlots.push(t.Start, t.End);
+          used += t.End - t.Start + 1;
+          tmpArray.push(
+            `节点：${t.Nodes[0].Id} (${t.Nodes[0].Addr})  拥有 slots: ${t.Start} - ${t.End}`
+          );
+        }
+        usedSlots.sort((a, b) => {
+          return a - b;
+        });
+        if (usedSlots[0] > 0) {
+          availableSlots = [0, usedSlots[0] - 1];
+        }
+        for (let i = 1; i < usedSlots.length + 1; i += 2) {
+          availableSlots.push(usedSlots[i] + 1);
+          if (usedSlots[i + 1]) {
+            availableSlots.push(usedSlots[i + 1] - 1);
+          }
+        }
+        if (availableSlots[availableSlots.length - 1] < 16383) {
+          availableSlots.push(16383);
+        }
+        for (let i = 0; i < availableSlots.length - 1; i += 2) {
+          if (availableSlots[i] > availableSlots[i + 1]) continue;
+          tmpArray.push(
+            `slots: ${availableSlots[i]} - ${availableSlots[i + 1]} 待分配`
+          );
+        }
+        console.log(usedSlots);
+        console.log(availableSlots);
+        tmpArray.push(
+          "共有：" +
+            used +
+            " 个 slots 被占用，剩余需分配 slots 总数：" +
+            (max - used)
+        );
+        d.Data = tmpArray.join("\n");
+      }
+      if (typeof d.Data !== "string") {
+        return;
+      }
+      z = d.Data.split("\n");
       data.push(
         ...z
           .filter(e => {
@@ -134,10 +244,94 @@ export default {
       clusterReplicateShow: false,
       repHost: "",
       repPort: "",
-      repNodeID: ""
+      repNodeID: "",
+      slotsSetShow: false,
+      slotsHost: "",
+      slotsPort: "",
+      slotsStart: "",
+      slotsEnd: "",
+      slotsDelShow: false,
+      slotsDelHost: "",
+      slotsDelPort: "",
+      slotsDelStart: "",
+      slotsDelEnd: ""
     };
   },
   methods: {
+    // slots add
+    slotsSet() {
+      this.slotsSetShow = true;
+    },
+    slotsSetClose() {
+      this.slotsSetShow = false;
+    },
+    inputSlotsHost(e) {
+      this.slotsHost = e.target.value;
+    },
+    inputSlotsPort(e) {
+      this.slotsPort = e.target.value;
+    },
+    inputSlotsStart(e) {
+      this.slotsStart = e.target.value;
+    },
+    inputSlotsEnd(e) {
+      this.slotsEnd = e.target.value;
+    },
+    confirmSlotsSet() {
+      this.$socket.sendObj({
+        Func: "/config/redis/setSlots",
+        Data: JSON.stringify({
+          id: this.$route.query.id,
+          host: this.slotsHost,
+          port: this.slotsPort,
+          start: Number(this.slotsStart),
+          end: Number(this.slotsEnd)
+        })
+      });
+      this.slotsSetShow = false;
+    },
+    // slots del
+    slotsDel() {
+      this.slotsDelShow = true;
+    },
+    slotsDelClose() {
+      this.slotsDelShow = false;
+    },
+    inputSlotsDelHost(e) {
+      this.slotsDelHost = e.target.value;
+    },
+    inputSlotsDelPort(e) {
+      this.slotsDelPort = e.target.value;
+    },
+    inputSlotsDelStart(e) {
+      this.slotsDelStart = e.target.value;
+    },
+    inputSlotsDelEnd(e) {
+      this.slotsDelEnd = e.target.value;
+    },
+    confirmSlotsDel() {
+      this.$socket.sendObj({
+        Func: "/config/redis/delSlots",
+        Data: JSON.stringify({
+          id: this.$route.query.id,
+          host: this.slotsDelHost,
+          port: this.slotsDelPort,
+          start: Number(this.slotsDelStart),
+          end: Number(this.slotsDelEnd)
+        })
+      });
+      this.slotsDelShow = false;
+    },
+    // slots stats
+    slotsStats() {
+      this.$socket.sendObj({
+        Func: "/config/redis/clusterSlots",
+        Data: JSON.stringify({
+          id: this.$route.query.id
+        })
+      });
+    },
+    // cluster
     confirmClusterReplicate() {
       this.$socket.sendObj({
         Func: "/config/redis/clusterReplicate",
@@ -229,15 +423,16 @@ export default {
 </script>
 <style lang="stylus" scoped>
 .handleButton {
-  width: 100%;
-  height: 20vh;
+  width: 24%;
+  height: 78vh;
   overflow: auto;
+  float: right;
 }
 
 .main-box {
   box-sizing: border-box;
   width: 100%;
-  height: 60vh;
+  height: 78vh;
 }
 
 .each-input {
@@ -254,7 +449,8 @@ export default {
 
 #container {
   box-sizing: border-box;
-  width: 100%;
+  float: left;
+  width: 74%;
   z-index: 1;
   height: 100%;
   background-color: #2b2b2b;

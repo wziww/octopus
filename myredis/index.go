@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net"
+	cluster "octopus/myredis/cluster"
 	"strings"
 	"sync"
 	"time"
@@ -95,7 +96,7 @@ func getFromRDSStr(str1, str2 string) string {
 
 // ClusterMeet ...
 func ClusterMeet(id string, host string, port string) string {
-	if redisSources[id] == nil {
+	if redisSources[id] == nil || redisSources[id].Type != "cluster" {
 		return "error"
 	}
 	switch redisSources[id].self.(type) {
@@ -112,7 +113,7 @@ func ClusterMeet(id string, host string, port string) string {
 
 // ClusterForget ...
 func ClusterForget(id string, nodeid string) string {
-	if redisSources[id] == nil {
+	if redisSources[id] == nil || redisSources[id].Type != "cluster" {
 		return "error"
 	}
 	switch redisSources[id].self.(type) {
@@ -129,7 +130,7 @@ func ClusterForget(id string, nodeid string) string {
 
 // ClusterReplicate ...
 func ClusterReplicate(id, host, port, nodeid string) string {
-	if redisSources[id] == nil {
+	if redisSources[id] == nil || redisSources[id].Type != "cluster" {
 		return "error"
 	}
 	switch redisSources[id].self.(type) {
@@ -146,6 +147,63 @@ func ClusterReplicate(id, host, port, nodeid string) string {
 	}
 	return "error"
 }
+
+// ClusterSlotsStats slots 情况 // cluster
+func ClusterSlotsStats(id string) interface{} {
+	if redisSources[id] == nil || redisSources[id].Type != "cluster" {
+		return []byte("error")
+	}
+	switch redisSources[id].self.(type) {
+	case *redis.ClusterClient:
+		z := redisSources[id].self.(*redis.ClusterClient)
+		slots, err := z.ClusterSlots().Result()
+		if err == nil {
+			return slots
+		}
+		return err.Error()
+	}
+	return []byte("error")
+}
+
+// ClusterSlotsSet ...
+func ClusterSlotsSet(id, host, port string, start, end int64) interface{} {
+	if redisSources[id] == nil || redisSources[id].Type != "cluster" {
+		return "error"
+	}
+	switch redisSources[id].self.(type) {
+	case *redis.ClusterClient:
+		tmpClient := redis.NewClient(&redis.Options{
+			Addr: host + ":" + port,
+		})
+		defer tmpClient.Close()
+		result, err := tmpClient.Eval(cluster.AddSlotsLua(start, end), []string{}).Result()
+		if err != nil {
+			return err.Error()
+		}
+		return result
+	}
+	return "error"
+}
+
+// // ClusterSlotsDel ...
+// func ClusterSlotsDel(id, host, port string, start, end int64) interface{} {
+// 	if redisSources[id] == nil || redisSources[id].Type != "cluster" {
+// 		return "error"
+// 	}
+// 	switch redisSources[id].self.(type) {
+// 	case *redis.ClusterClient:
+// 		tmpClient := redis.NewClient(&redis.Options{
+// 			Addr: host + ":" + port,
+// 		})
+// 		defer tmpClient.Close()
+// 		result, err := tmpClient.Eval(cluster.DelSlotsLua(start, end), []string{}).Result()
+// 		if err != nil {
+// 			return err.Error()
+// 		}
+// 		return result
+// 	}
+// 	return "error"
+// }
 
 // AddSource 添加监控源
 func AddSource(name string, opt *redis.Options) int {
