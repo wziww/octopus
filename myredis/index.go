@@ -36,13 +36,13 @@ type target struct {
 	self        interface{}
 }
 
-// Server 地址 => 版本对应关系
+// Server address => version
 type Server struct {
 	ADDR         string
 	RedisVersion string
 }
 
-// Stats redis「info stats」部分字段信息
+// Stats redis「info stats」
 type Stats struct {
 	InstantaneousInputKbps  string
 	InstantaneousOutputKbps string
@@ -50,14 +50,14 @@ type Stats struct {
 	ADDR                    string
 }
 
-// Memory redis「info memory」 部分字段信息
+// Memory redis「info memory」
 type Memory struct {
 	TotalSystemMemory string
 	Maxmemory         string
 	UsedMemory        string
 }
 
-// DetailResult 节点详情
+// DetailResult node detail
 type DetailResult struct {
 	ID      string
 	ADDR    string
@@ -96,7 +96,7 @@ func toLines(str string) []string {
 	return strings.Split(str, "\n")
 }
 
-// getFromRDSStr 从 redis string 中解析值
+// getFromRDSStr get value from redis's return string
 func getFromRDSStr(str1, str2 string) string {
 	if len(str1) > len(str2) && str1[:len(str2)] == str2 {
 		return str1[len(str2):]
@@ -158,7 +158,7 @@ func ClusterReplicate(id, host, port, nodeid string) string {
 	return "error"
 }
 
-// ClusterSlotsStats slots 情况 // cluster
+// ClusterSlotsStats slots 情况
 func ClusterSlotsStats(id string) interface{} {
 	if redisSources[id] == nil || redisSources[id].Type != "cluster" {
 		return []byte("error")
@@ -194,26 +194,6 @@ func ClusterSlotsSet(id, host, port string, start, end int64) interface{} {
 	}
 	return "error"
 }
-
-// // ClusterSlotsDel ...
-// func ClusterSlotsDel(id, host, port string, start, end int64) interface{} {
-// 	if redisSources[id] == nil || redisSources[id].Type != "cluster" {
-// 		return "error"
-// 	}
-// 	switch redisSources[id].self.(type) {
-// 	case *redis.ClusterClient:
-// 		tmpClient := redis.NewClient(&redis.Options{
-// 			Addr: host + ":" + port,
-// 		})
-// 		defer tmpClient.Close()
-// 		result, err := tmpClient.Eval(cluster.DelSlotsLua(start, end), []string{}).Result()
-// 		if err != nil {
-// 			return err.Error()
-// 		}
-// 		return result
-// 	}
-// 	return "error"
-// }
 
 // AddSource 添加监控源
 func AddSource(name string, opt *redis.Options) int {
@@ -253,8 +233,6 @@ func AddSource(name string, opt *redis.Options) int {
 	}
 finish:
 	if REDISTYPE == "cluster" {
-		// zz, ee := c.(*redis.ClusterClient).Get("test").Result()
-		// fmt.Println(zz, ee)
 		pingStr, pingError = c.(*redis.ClusterClient).Ping().Result()
 	} else {
 		pingStr, pingError = c.(*redis.Client).Ping().Result()
@@ -462,18 +440,23 @@ func getNoSlotsMaster(id string) (rst []*DetailResult) {
 		cr, _ := z.ClusterNodes().Result()
 		crArr := toLines(cr)
 		for _, v := range crArr {
-			if len(v) > 0 {
-				vArr := strings.Split(v, " ")
-				if len(vArr) == 8 { // no slot
-					if strings.IndexAny(vArr[2], "master") != -1 { // master node
-						rst = append(rst, &DetailResult{
-							ID:   vArr[0],
-							ADDR: vArr[1],
-							ROLE: vArr[2],
-						})
-					}
-				}
+			/*
+			*continue if v's empty or its not master node or has slots*/
+			if len(v) == 0 {
+				continue
 			}
+			vArr := strings.Split(v, " ")
+			if len(vArr) != 8 {
+				continue
+			}
+			if strings.IndexAny(vArr[2], "master") == -1 {
+				continue
+			}
+			rst = append(rst, &DetailResult{
+				ID:   vArr[0],
+				ADDR: vArr[1],
+				ROLE: vArr[2],
+			})
 		}
 	}
 	return
@@ -496,26 +479,32 @@ func ClusterSlotsMigrating(id, sourceID, targetID string, slotsStart,
 			nodesResult = append(nodesResult, v)
 		}
 		for _, v := range nodesResult {
-			if strings.IndexAny(strings.ToLower(v.ROLE), "master") != -1 {
-				if v.ID == sourceID {
-					sourceNode = v
-					continue
-				}
-				if v.ID == targetID {
-					targetNode = v
-					continue
-				}
-				if sourceNode != nil && targetNode != nil {
-					break
-				}
+			/*
+			* must be master node */
+			if strings.IndexAny(strings.ToLower(v.ROLE), "master") == -1 {
+				continue
+			}
+			if v.ID == sourceID {
+				sourceNode = v
+				continue
+			}
+			if v.ID == targetID {
+				targetNode = v
+				continue
+			}
+			if sourceNode != nil && targetNode != nil {
+				break
 			}
 		}
 		if sourceNode == nil || targetNode == nil {
 			fn("not found source or target")
 			return ""
 		}
+		/*
+		* redis v4.x returns the address likes 127.0.0.1:6379@16379
+		*       v3.x likes 127.0.0.1:6379 */
 		tmpSourceClient := redis.NewClient(&redis.Options{
-			Addr: strings.Split(sourceNode.ADDR, "@")[0], // redis v4.x returns the address likes 127.0.0.1:6379@16379     v3.0 likes 127.0.0.1:6379
+			Addr: strings.Split(sourceNode.ADDR, "@")[0],
 		})
 		defer tmpSourceClient.Close()
 		tmpTargetClient := redis.NewClient(&redis.Options{
@@ -536,6 +525,8 @@ func ClusterSlotsMigrating(id, sourceID, targetID string, slotsStart,
 				if result2 != nil {
 					// fn(result2.(string))
 				}
+				/*
+				* CLUSTER SETSLOT went error  */
 				if err != nil || err2 != nil || strings.IndexAny(strings.ToLower(result.(string)), "ok") == -1 || strings.IndexAny(strings.ToLower(result2.(string)), "ok") == -1 {
 					if err != nil {
 						fn(err.Error())
@@ -557,8 +548,9 @@ func ClusterSlotsMigrating(id, sourceID, targetID string, slotsStart,
 						// fn(err.Error())
 						goto finish
 					}
+					/*
+					* this slot's keys migraton have been finished   */
 					if len(keys) == 0 {
-						// fn("------------- 所有 key 迁移完毕 -------------")
 						Annouce := []string{"CLUSTER", "SETSLOT", strconv.FormatInt(i, 10), "NODE", targetID}
 						// fn(strings.Join(Annouce, " "))
 						tmpSourceClient.Do(strArrToInterface(Annouce)...)
@@ -569,7 +561,6 @@ func ClusterSlotsMigrating(id, sourceID, targetID string, slotsStart,
 					hostNPort := strings.Split(tmpTargetClient.Options().Addr, ":")
 					for _, v := range keys {
 						// stepMigKey := []string{hostNPort[0], hostNPort[1], v, "0", "10s"}
-						// fn(strings.Join(stepMigKey, " "))
 						_, err := tmpSourceClient.Migrate(hostNPort[0], hostNPort[1], v, 0, time.Second*10).Result()
 						if err != nil {
 							fn(err.Error())
