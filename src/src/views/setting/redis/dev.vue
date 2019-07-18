@@ -200,7 +200,7 @@ export default {
         const status = d.Data.split(" ");
         status[0]++;
         status[1]++;
-        let str = "[";
+        let str = "slots 迁移中:\n[";
         for (let i = 0; i < (status[1] / status[0]) * 50; i++) {
           str += "*";
         }
@@ -279,7 +279,7 @@ export default {
       while (data.length > 200) {
         data.shift();
       }
-      that.data = data.join("\n"); // this.xxx = xxx
+      that.data = data.join("\n");
       const container = that.$el.querySelector("#container");
       setTimeout(() => {
         container.scrollTop += 1000;

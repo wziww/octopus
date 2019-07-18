@@ -36,13 +36,13 @@ type target struct {
 	self        interface{}
 }
 
-// Server ...
+// Server 地址 => 版本对应关系
 type Server struct {
 	ADDR         string
 	RedisVersion string
 }
 
-// Stats redis info stats
+// Stats redis「info stats」部分字段信息
 type Stats struct {
 	InstantaneousInputKbps  string
 	InstantaneousOutputKbps string
@@ -50,14 +50,14 @@ type Stats struct {
 	ADDR                    string
 }
 
-// Memory redis info memory
+// Memory redis「info memory」 部分字段信息
 type Memory struct {
 	TotalSystemMemory string
 	Maxmemory         string
 	UsedMemory        string
 }
 
-// DetailResult ...
+// DetailResult 节点详情
 type DetailResult struct {
 	ID      string
 	ADDR    string
@@ -451,6 +451,34 @@ func GetDetail(id string) []*DetailResult {
 	return nil
 }
 
+// 获取不含 slots 的 master 节点
+func getNoSlotsMaster(id string) (rst []*DetailResult) {
+	if redisSources[id] == nil || redisSources[id].Type != "cluster" {
+		return
+	}
+	switch redisSources[id].self.(type) {
+	case *redis.ClusterClient:
+		z := redisSources[id].self.(*redis.ClusterClient)
+		cr, _ := z.ClusterNodes().Result()
+		crArr := toLines(cr)
+		for _, v := range crArr {
+			if len(v) > 0 {
+				vArr := strings.Split(v, " ")
+				if len(vArr) == 8 { // no slot
+					if strings.IndexAny(vArr[2], "master") != -1 { // master node
+						rst = append(rst, &DetailResult{
+							ID:   vArr[0],
+							ADDR: vArr[1],
+							ROLE: vArr[2],
+						})
+					}
+				}
+			}
+		}
+	}
+	return
+}
+
 // ClusterSlotsMigrating slots 迁移
 func ClusterSlotsMigrating(id, sourceID, targetID string, slotsStart,
 	slotsEnd int64, fn func(string, ...int64)) interface{} {
@@ -464,6 +492,9 @@ func ClusterSlotsMigrating(id, sourceID, targetID string, slotsStart,
 			sourceNode *DetailResult
 			targetNode *DetailResult
 		)
+		for _, v := range getNoSlotsMaster(id) {
+			nodesResult = append(nodesResult, v)
+		}
 		for _, v := range nodesResult {
 			if strings.IndexAny(strings.ToLower(v.ROLE), "master") != -1 {
 				if v.ID == sourceID {
