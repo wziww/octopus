@@ -63,10 +63,10 @@
         height="300"
       >
         <div class="each-input">
-          <a-input placeholder="需要设置为从节点的 host" @change="inputRepHost" />
+          <a-input placeholder="需要分配的节点 host" @change="inputRepHost" />
         </div>
         <div class="each-input">
-          <a-input placeholder="需要设置为从节点的 port" @change="inputRepPort" />
+          <a-input placeholder="需要分配的节点 port" @change="inputRepPort" />
         </div>
         <div class="each-input">
           <a-input placeholder="主节点 nodeid" @change="inputRepNodeID" />
@@ -171,7 +171,6 @@ export default {
       Func: "/config/redis/clusterNodes",
       Data: JSON.stringify({ id: that.$route.query.id })
     });
-    let iii = 0;
     const handMessage = function(da) {
       // 接受服务端数据
       const d = JSON.parse(da.data);
