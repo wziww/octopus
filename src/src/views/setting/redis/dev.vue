@@ -162,6 +162,7 @@
 <script>
 let data = [];
 let t = null;
+let lastTime = new Date().getTime();
 export default {
   name: "setting_redis",
   data() {
@@ -170,7 +171,9 @@ export default {
       Func: "/config/redis/clusterNodes",
       Data: JSON.stringify({ id: that.$route.query.id })
     });
+    let iii = 0;
     const handMessage = function(da) {
+      // 接受服务端数据
       const d = JSON.parse(da.data);
       let z = [];
       if (d.Type === "/config/redis/clusterNodes") {
@@ -192,6 +195,27 @@ export default {
       }
       if (d.Type === "/config/redis/slots/migrating") {
         data.push("// slots 迁移");
+      }
+      if (d.Type === "/config/redis/slots/migrating/0") {
+        const status = d.Data.split(" ");
+        status[0]++;
+        status[1]++;
+        let str = "[";
+        for (let i = 0; i < (status[1] / status[0]) * 50; i++) {
+          str += "*";
+        }
+        for (let i = 0; i < 50 - (status[1] / status[0]) * 50; i++) {
+          str += "_";
+        }
+        str += "] " + ((status[1] / status[0]) * 100).toFixed(2) + " %";
+        data = [str];
+        str += "\n";
+        d.Data = str;
+        if (lastTime + 100 < new Date().getTime() || status[1] === status[0]) {
+          lastTime = new Date().getTime();
+          that.data = d.Data;
+        }
+        return;
       }
       if (d.Type === "/config/redis/clusterSlots") {
         const max = 16384;
@@ -255,7 +279,7 @@ export default {
       while (data.length > 200) {
         data.shift();
       }
-      that.data = data.join("\n");
+      that.data = data.join("\n"); // this.xxx = xxx
       const container = that.$el.querySelector("#container");
       setTimeout(() => {
         container.scrollTop += 1000;

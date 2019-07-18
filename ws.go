@@ -108,13 +108,19 @@ func init() {
 			SlotsEnd   int64  `json:"slotsEnd"`
 		}{}
 		json.Unmarshal([]byte(data), body)
-		myredis.ClusterSlotsMigrating(body.ID, body.SourceID, body.TargetID, body.SlotsStart, body.SlotsEnd, func(str string) {
+		myredis.ClusterSlotsMigrating(body.ID, body.SourceID, body.TargetID, body.SlotsStart, body.SlotsEnd, func(str string, flag ...int64) {
 			if len(conns) > 0 {
+				t := "/config/redis/slots/migrating"
+				if len(flag) > 0 {
+					if flag[0] == 0 {
+						t = "/config/redis/slots/migrating/0"
+					}
+				}
 				bts, _ := json.Marshal(&socketReturn{
-					Type: "/config/redis/slots/migrating",
+					Type: t,
 					Data: str,
 				})
-				SafeWrite(conns[0],
+				go SafeWrite(conns[0],
 					bts)
 			}
 		})

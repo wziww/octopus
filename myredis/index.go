@@ -453,7 +453,7 @@ func GetDetail(id string) []*DetailResult {
 
 // ClusterSlotsMigrating slots 迁移
 func ClusterSlotsMigrating(id, sourceID, targetID string, slotsStart,
-	slotsEnd int64, fn func(string)) interface{} {
+	slotsEnd int64, fn func(string, ...int64)) interface{} {
 	if redisSources[id] == nil || redisSources[id].Type != "cluster" {
 		return "error"
 	}
@@ -494,16 +494,16 @@ func ClusterSlotsMigrating(id, sourceID, targetID string, slotsStart,
 		{
 			for i := slotsStart; i <= slotsEnd; i++ {
 				step1 := []string{"CLUSTER", "SETSLOT", strconv.FormatInt(i, 10), "MIGRATING", targetID}
-				fn(strings.Join(step1, " "))
+				// fn(strings.Join(step1, " "))
 				result, err := tmpSourceClient.Do(strArrToInterface(step1)...).Result()
 				if result != nil {
-					fn(result.(string))
+					// fn(result.(string))
 				}
 				step2 := []string{"CLUSTER", "SETSLOT", strconv.FormatInt(i, 10), "IMPORTING", sourceID}
-				fn(strings.Join(step2, " "))
+				// fn(strings.Join(step2, " "))
 				result2, err2 := tmpTargetClient.Do(strArrToInterface(step2)...).Result()
 				if result2 != nil {
-					fn(result2.(string))
+					// fn(result2.(string))
 				}
 				if err != nil || err2 != nil || strings.IndexAny(strings.ToLower(result.(string)), "ok") == -1 || strings.IndexAny(strings.ToLower(result2.(string)), "ok") == -1 {
 					if err != nil {
@@ -513,40 +513,41 @@ func ClusterSlotsMigrating(id, sourceID, targetID string, slotsStart,
 						fn(err2.Error())
 					}
 					stepErr1 := []string{"CLUSTER", "SETSLOT", strconv.FormatInt(i, 10), "STABLE"}
-					fn(strings.Join(stepErr1, " "))
+					// fn(strings.Join(stepErr1, " "))
 					tmpSourceClient.Do(strArrToInterface(stepErr1)...)
 					stepErr2 := []string{"CLUSTER", "SETSLOT", strconv.FormatInt(i, 10), "STABLE"}
-					fn(strings.Join(stepErr2, " "))
+					// fn(strings.Join(stepErr2, " "))
 					tmpTargetClient.Do(strArrToInterface(stepErr2)...)
 					goto fail
 				}
 				for {
 					keys, err := tmpSourceClient.ClusterGetKeysInSlot(int(i), 10).Result()
 					if err != nil {
-						fn(err.Error())
+						// fn(err.Error())
 						goto finish
 					}
 					if len(keys) == 0 {
-						fn("------------- 所有 key 迁移完毕 -------------")
+						// fn("------------- 所有 key 迁移完毕 -------------")
 						Annouce := []string{"CLUSTER", "SETSLOT", strconv.FormatInt(i, 10), "NODE", targetID}
-						fn(strings.Join(Annouce, " "))
+						// fn(strings.Join(Annouce, " "))
 						tmpSourceClient.Do(strArrToInterface(Annouce)...)
-						fn(strings.Join(Annouce, " "))
+						// fn(strings.Join(Annouce, " "))
 						tmpTargetClient.Do(strArrToInterface(Annouce)...)
 						break
 					}
 					hostNPort := strings.Split(tmpTargetClient.Options().Addr, ":")
 					for _, v := range keys {
-						stepMigKey := []string{hostNPort[0], hostNPort[1], v, "0", "10s"}
-						fn(strings.Join(stepMigKey, " "))
-						result, err := tmpSourceClient.Migrate(hostNPort[0], hostNPort[1], v, 0, time.Second*10).Result()
+						// stepMigKey := []string{hostNPort[0], hostNPort[1], v, "0", "10s"}
+						// fn(strings.Join(stepMigKey, " "))
+						_, err := tmpSourceClient.Migrate(hostNPort[0], hostNPort[1], v, 0, time.Second*10).Result()
 						if err != nil {
 							fn(err.Error())
 						} else {
-							fn(result)
+							// fn(result)
 						}
 					}
 				}
+				fn(strconv.FormatInt(slotsEnd-slotsStart, 10)+" "+strconv.FormatInt(i-slotsStart, 10), 0)
 			}
 		}
 	}
