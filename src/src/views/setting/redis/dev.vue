@@ -130,6 +130,32 @@
           <a-button style="width: 30%;float: left;" class="submit" type="primary">提交</a-button>
         </a-popconfirm>
       </a-drawer>-->
+      <a-button class="eachHandle" @click="slotsMig" type="primary">slots 迁移</a-button>
+      <a-drawer
+        title="slots 迁移"
+        placement="top"
+        @close="slotsMigClose"
+        :closable="true"
+        :visible="slotsMigShow"
+        height="400"
+      >
+        <div class="each-input">
+          <a-input placeholder="来源节点" @change="inputSlotsMigSource" />
+        </div>
+        <div class="each-input">
+          <a-input placeholder="目标节点" @change="inputSlotsMigTarget" />
+        </div>
+        <div class="each-input">
+          <a-input type="number" placeholder="slots 起（0-16383）" @change="inputSlotsMigStart" />
+        </div>
+        <div class="each-input">
+          <a-input type="number" placeholder="slots 止（0-16383）" @change="inputSlotsMigEnd" />
+        </div>
+        <a-popconfirm @confirm="confirmSlotsMig" :title="'确认进行 slots 迁移'">
+          <a-icon slot="icon" type="question-circle-o" style="color: red" />
+          <a-button style="width: 30%;float: left;" class="submit" type="primary">提交</a-button>
+        </a-popconfirm>
+      </a-drawer>
     </div>
   </div>
 </template>
@@ -144,7 +170,7 @@ export default {
       Func: "/config/redis/clusterNodes",
       Data: JSON.stringify({ id: that.$route.query.id })
     });
-    this.$socket.onmessage = da => {
+    const handMessage = function(da) {
       const d = JSON.parse(da.data);
       let z = [];
       if (d.Type === "/config/redis/clusterNodes") {
@@ -163,6 +189,9 @@ export default {
       }
       if (d.Type === "/config/redis/delSlots") {
         data.push("// slots 删除");
+      }
+      if (d.Type === "/config/redis/slots/migrating") {
+        data.push("// slots 迁移");
       }
       if (d.Type === "/config/redis/clusterSlots") {
         const max = 16384;
@@ -200,8 +229,6 @@ export default {
             `slots: ${availableSlots[i]} - ${availableSlots[i + 1]} 待分配`
           );
         }
-        console.log(usedSlots);
-        console.log(availableSlots);
         tmpArray.push(
           "共有：" +
             used +
@@ -229,11 +256,17 @@ export default {
         data.shift();
       }
       that.data = data.join("\n");
-      const container = this.$el.querySelector("#container");
+      const container = that.$el.querySelector("#container");
       setTimeout(() => {
         container.scrollTop += 1000;
       }, 100);
     };
+    this.$socket.onmessage = handMessage;
+    t = setInterval(() => {
+      if (that.$socket.onmessage !== handMessage) {
+        that.$socket.onmessage = handMessage;
+      }
+    }, 1000);
     return {
       data,
       clusterMeetShow: false,
@@ -250,11 +283,11 @@ export default {
       slotsPort: "",
       slotsStart: "",
       slotsEnd: "",
-      slotsDelShow: false,
-      slotsDelHost: "",
-      slotsDelPort: "",
-      slotsDelStart: "",
-      slotsDelEnd: ""
+      slotsMigShow: false,
+      slotsMigSource: "",
+      slotsMigTarget: "",
+      slotsMigStart: "",
+      slotsMigEnd: ""
     };
   },
   methods: {
@@ -290,37 +323,37 @@ export default {
       });
       this.slotsSetShow = false;
     },
-    // slots del
-    slotsDel() {
-      this.slotsDelShow = true;
+    // slots Mig
+    slotsMig() {
+      this.slotsMigShow = true;
     },
-    slotsDelClose() {
-      this.slotsDelShow = false;
+    slotsMigClose() {
+      this.slotsMigShow = false;
     },
-    inputSlotsDelHost(e) {
-      this.slotsDelHost = e.target.value;
+    inputSlotsMigSource(e) {
+      this.slotsMigSource = e.target.value;
     },
-    inputSlotsDelPort(e) {
-      this.slotsDelPort = e.target.value;
+    inputSlotsMigTarget(e) {
+      this.slotsMigTarget = e.target.value;
     },
-    inputSlotsDelStart(e) {
-      this.slotsDelStart = e.target.value;
+    inputSlotsMigStart(e) {
+      this.slotsMigStart = e.target.value;
     },
-    inputSlotsDelEnd(e) {
-      this.slotsDelEnd = e.target.value;
+    inputSlotsMigEnd(e) {
+      this.slotsMigEnd = e.target.value;
     },
-    confirmSlotsDel() {
+    confirmSlotsMig() {
       this.$socket.sendObj({
-        Func: "/config/redis/delSlots",
+        Func: "/config/redis/slots/migrating",
         Data: JSON.stringify({
           id: this.$route.query.id,
-          host: this.slotsDelHost,
-          port: this.slotsDelPort,
-          start: Number(this.slotsDelStart),
-          end: Number(this.slotsDelEnd)
+          sourceId: this.slotsMigSource,
+          TargetID: this.slotsMigTarget,
+          slotsStart: Number(this.slotsMigStart),
+          slotsEnd: Number(this.slotsMigEnd)
         })
       });
-      this.slotsDelShow = false;
+      this.slotsMigShow = false;
     },
     // slots stats
     slotsStats() {

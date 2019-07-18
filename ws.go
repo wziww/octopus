@@ -22,6 +22,18 @@ var (
 	sendLock sync.Mutex
 )
 
+// SafeWrite ws safe write
+func SafeWrite(c *websocket.Conn, result []byte, messageType ...int) error {
+	sendLock.Lock()
+	defer sendLock.Unlock()
+	mt := websocket.TextMessage
+	if len(messageType) > 0 {
+		mt = messageType[0]
+	}
+	err := c.WriteMessage(mt, result)
+	return err
+}
+
 func ws(w http.ResponseWriter, r *http.Request) {
 	c, err := upgrader.Upgrade(w, r, nil)
 	connID := fmt.Sprintf("%x", md5.Sum([]byte(uuid.New().String())))
@@ -39,12 +51,12 @@ func ws(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 		go func() {
-			result := handle(message, connID)
-			sendLock.Lock()
-			defer sendLock.Unlock()
-			err = c.WriteMessage(mt, result)
-			if err != nil {
-				log.Println("write:", err)
+			result := handle(message, connID, c)
+			if result != nil && len(result) > 0 {
+				SafeWrite(c, result, mt)
+				if err != nil {
+					log.Println("write:", err)
+				}
 			}
 		}()
 	}
@@ -65,29 +77,50 @@ type newConfig struct {
 	Type string `json:"type"`
 }
 
-type router func(data string) []byte
+type router func(data string, conns ...*websocket.Conn) []byte
 
 var routerAll map[string]router
 
-func handle(message []byte, connID string) []byte {
+func handle(message []byte, connID string, c *websocket.Conn) []byte {
 	b := &socketRecv{}
 	json.Unmarshal(message, b)
 	routerPath := b.Func
 	if routerAll[routerPath] != nil {
-		return routerAll[routerPath](b.Data)
+		return routerAll[routerPath](b.Data, c)
 	}
 	return []byte("404")
 }
 func init() {
 	routerAll = make(map[string]router)
-	Router("/config/redis", func(data string) []byte {
+	Router("/config/redis", func(data string, conns ...*websocket.Conn) []byte {
 		bytes, _ := json.Marshal(&socketReturn{
 			Type: "/config/redis",
 			Data: myredis.GetConfig(),
 		})
 		return bytes
 	})
-	Router("/config/redis/clusterSlots", func(data string) []byte {
+	Router("/config/redis/slots/migrating", func(data string, conns ...*websocket.Conn) []byte {
+		body := &struct {
+			ID         string `json:"id"`
+			SourceID   string `json:"sourceId"`
+			TargetID   string `json:"targetId"`
+			SlotsStart int64  `json:"slotsStart"`
+			SlotsEnd   int64  `json:"slotsEnd"`
+		}{}
+		json.Unmarshal([]byte(data), body)
+		myredis.ClusterSlotsMigrating(body.ID, body.SourceID, body.TargetID, body.SlotsStart, body.SlotsEnd, func(str string) {
+			if len(conns) > 0 {
+				bts, _ := json.Marshal(&socketReturn{
+					Type: "/config/redis/slots/migrating",
+					Data: str,
+				})
+				SafeWrite(conns[0],
+					bts)
+			}
+		})
+		return []byte{}
+	})
+	Router("/config/redis/clusterSlots", func(data string, conns ...*websocket.Conn) []byte {
 		c := &struct {
 			ID string `json:"id"`
 		}{}
@@ -98,7 +131,7 @@ func init() {
 		})
 		return bytes
 	})
-	Router("/config/redis/clusterNodes", func(data string) []byte {
+	Router("/config/redis/clusterNodes", func(data string, conns ...*websocket.Conn) []byte {
 		c := &struct {
 			ID string `json:"id"`
 		}{}
@@ -109,7 +142,7 @@ func init() {
 		})
 		return bytes
 	})
-	Router("/config/redis/setSlots", func(data string) []byte {
+	Router("/config/redis/setSlots", func(data string, conns ...*websocket.Conn) []byte {
 		c := &struct {
 			ID    string `json:"id"`
 			Host  string `json:"host"`
@@ -139,7 +172,7 @@ func init() {
 	// 	})
 	// 	return bytes
 	// })
-	Router("/config/redis/clusterReplicate", func(data string) []byte {
+	Router("/config/redis/clusterReplicate", func(data string, conns ...*websocket.Conn) []byte {
 		c := &struct {
 			ID     string `json:"id"`
 			Host   string `json:"host"`
@@ -153,7 +186,7 @@ func init() {
 		})
 		return bytes
 	})
-	Router("/config/redis/clusterForget", func(data string) []byte {
+	Router("/config/redis/clusterForget", func(data string, conns ...*websocket.Conn) []byte {
 		c := &struct {
 			ID     string `json:"id"`
 			NodeID string `json:"nodeid"`
@@ -165,7 +198,7 @@ func init() {
 		})
 		return bytes
 	})
-	Router("/config/redis/clusterMeet", func(data string) []byte {
+	Router("/config/redis/clusterMeet", func(data string, conns ...*websocket.Conn) []byte {
 		c := &struct {
 			ID   string `json:"id"`
 			Host string `json:"host"`
@@ -178,7 +211,7 @@ func init() {
 		})
 		return bytes
 	})
-	Router("/config/redis/detail", func(data string) []byte {
+	Router("/config/redis/detail", func(data string, conns ...*websocket.Conn) []byte {
 		c := &struct {
 			ID string `json:"id"`
 		}{}
@@ -190,7 +223,7 @@ func init() {
 		})
 		return bytes
 	})
-	Router("/config/redis/del", func(data string) []byte {
+	Router("/config/redis/del", func(data string, conns ...*websocket.Conn) []byte {
 		c := &struct {
 			ID string `json:"id"`
 		}{}
@@ -202,7 +235,7 @@ func init() {
 		})
 		return bytes
 	})
-	Router("/redis/stats", func(data string) []byte {
+	Router("/redis/stats", func(data string, conns ...*websocket.Conn) []byte {
 		c := &struct {
 			ID string `json:"id"`
 		}{}

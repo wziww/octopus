@@ -26,7 +26,7 @@
         message="存在节点未配置「最大可用内存」 : maxmemory"
         type="warning"
         showIcon
-        :style="{display: maxmemoryWarning,width:'400px',float: 'left'}"
+        :style="{display: maxmemoryWarning.indexOf('show')===-1?'none':'',width:'400px',float: 'left'}"
       />
       <a-alert
         message="存在节点内存使用达 90% +"
@@ -143,12 +143,13 @@ let data = [];
 let type = "cluster";
 let interTime = 1000;
 let t = null;
+let t2 = null;
 let index = ["primary", "default", "default", "default", "default", "default"];
 export default {
   name: "setting_redis",
   data() {
     data = [];
-    let maxmemoryWarning = "none";
+    let maxmemoryWarning = ["none"];
     let usedmemoryWarning = "none";
     let reShardingSlots = "none";
     const that = this;
@@ -158,9 +159,10 @@ export default {
         Data: JSON.stringify({ id: that.$route.query.id })
       });
     }, interTime);
-    this.$socket.onmessage = da => {
+    const handMessage = da => {
       const d = JSON.parse(da.data);
       if (d.Type === "/config/redis/detail") {
+        that.maxmemoryWarning = [];
         data = [];
         for (let i of d.Data) {
           that.type = i.Type;
@@ -222,9 +224,9 @@ export default {
             Maxmemory: (() => {
               const tmp = i.Maxmemory / 1024 / 1024;
               if (tmp === 0) {
-                if (parseInt(Math.random() * 100) > 80) {
-                  that.maxmemoryWarning = "";
-                }
+                that.maxmemoryWarning.push("show");
+              } else {
+                that.maxmemoryWarning.push("none");
               }
               return {
                 value: tmp.toFixed(2),
@@ -244,9 +246,15 @@ export default {
             if (a.role[0].ROLE > b.role[0].ROLE) return 1;
             return -1;
           });
-        this.data = data;
+        that.data = data;
       }
     };
+    this.$socket.onmessage = handMessage;
+    t2 = setInterval(() => {
+      if (that.$socket.onmessage !== handMessage) {
+        that.$socket.onmessage = handMessage;
+      }
+    }, 1000);
     return {
       data,
       index,
@@ -354,6 +362,9 @@ export default {
   beforeDestroy() {
     if (t !== null) {
       window.clearInterval(t);
+    }
+    if (t2 !== null) {
+      window.clearInterval(t2);
     }
   }
 };

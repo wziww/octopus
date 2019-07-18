@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	cluster "octopus/myredis/cluster"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -72,6 +73,15 @@ type DetailResult struct {
 
 func init() {
 	redisSources = make(map[string]*target)
+}
+
+// strArrToInterface .,..
+func strArrToInterface(strArr []string) []interface{} {
+	s := make([]interface{}, len(strArr))
+	for i, v := range strArr {
+		s[i] = v
+	}
+	return s
 }
 
 // trim ...
@@ -439,6 +449,117 @@ func GetDetail(id string) []*DetailResult {
 		return result
 	}
 	return nil
+}
+
+// ClusterSlotsMigrating slots 迁移
+func ClusterSlotsMigrating(id, sourceID, targetID string, slotsStart,
+	slotsEnd int64, fn func(string)) interface{} {
+	if redisSources[id] == nil || redisSources[id].Type != "cluster" {
+		return "error"
+	}
+	switch redisSources[id].self.(type) {
+	case *redis.ClusterClient:
+		nodesResult := GetDetail(id)
+		var (
+			sourceNode *DetailResult
+			targetNode *DetailResult
+		)
+		for _, v := range nodesResult {
+			if strings.IndexAny(strings.ToLower(v.ROLE), "master") != -1 {
+				if v.ID == sourceID {
+					sourceNode = v
+					continue
+				}
+				if v.ID == targetID {
+					targetNode = v
+					continue
+				}
+				if sourceNode != nil && targetNode != nil {
+					break
+				}
+			}
+		}
+		if sourceNode == nil || targetNode == nil {
+			fn("not found source or target")
+			return ""
+		}
+		tmpSourceClient := redis.NewClient(&redis.Options{
+			Addr: strings.Split(sourceNode.ADDR, "@")[0], // redis v4.x returns the address likes 127.0.0.1:6379@16379     v3.0 likes 127.0.0.1:6379
+		})
+		defer tmpSourceClient.Close()
+		tmpTargetClient := redis.NewClient(&redis.Options{
+			Addr: strings.Split(targetNode.ADDR, "@")[0], // redis v4.x returns the address likes 127.0.0.1:6379@16379     v3.0 likes 127.0.0.1:6379
+		})
+		defer tmpTargetClient.Close()
+		{
+			for i := slotsStart; i <= slotsEnd; i++ {
+				step1 := []string{"CLUSTER", "SETSLOT", strconv.FormatInt(i, 10), "MIGRATING", targetID}
+				fn(strings.Join(step1, " "))
+				result, err := tmpSourceClient.Do(strArrToInterface(step1)...).Result()
+				if result != nil {
+					fn(result.(string))
+				}
+				step2 := []string{"CLUSTER", "SETSLOT", strconv.FormatInt(i, 10), "IMPORTING", sourceID}
+				fn(strings.Join(step2, " "))
+				result2, err2 := tmpTargetClient.Do(strArrToInterface(step2)...).Result()
+				if result2 != nil {
+					fn(result2.(string))
+				}
+				if err != nil || err2 != nil || strings.IndexAny(strings.ToLower(result.(string)), "ok") == -1 || strings.IndexAny(strings.ToLower(result2.(string)), "ok") == -1 {
+					if err != nil {
+						fn(err.Error())
+					}
+					if err2 != nil {
+						fn(err2.Error())
+					}
+					stepErr1 := []string{"CLUSTER", "SETSLOT", strconv.FormatInt(i, 10), "STABLE"}
+					fn(strings.Join(stepErr1, " "))
+					tmpSourceClient.Do(strArrToInterface(stepErr1)...)
+					stepErr2 := []string{"CLUSTER", "SETSLOT", strconv.FormatInt(i, 10), "STABLE"}
+					fn(strings.Join(stepErr2, " "))
+					tmpTargetClient.Do(strArrToInterface(stepErr2)...)
+					goto finish
+				}
+				for {
+					keys, err := tmpSourceClient.ClusterGetKeysInSlot(int(i), 10).Result()
+					if err != nil {
+						fn(err.Error())
+						goto finish
+					}
+					if len(keys) == 0 {
+						fn("------------- 所有 key 迁移完毕 -------------")
+						break
+					}
+					hostNPort := strings.Split(tmpTargetClient.Options().Addr, ":")
+					for _, v := range keys {
+						stepMigKey := []string{hostNPort[0], hostNPort[1], v, "0", "10s"}
+						fn(strings.Join(stepMigKey, " "))
+						result, err := tmpSourceClient.Migrate(hostNPort[0], hostNPort[1], v, 0, time.Second*10).Result()
+						if err != nil {
+							fn(err.Error())
+						} else {
+							fn(result)
+						}
+					}
+				}
+				goto annouce
+			annouce:
+				{
+					for _, v := range nodesResult {
+						if strings.IndexAny(strings.ToLower(v.ROLE), "master") != -1 {
+							tmpTargetClient := redis.NewClient(&redis.Options{
+								Addr: strings.Split(v.ADDR, "@")[0], // redis v4.x returns the address likes 127.0.0.1:6379@16379     v3.0 likes 127.0.0.1:6379
+							})
+							tmpTargetClient.Close()
+						}
+					}
+				}
+			}
+		}
+	}
+finish:
+	fn("slots 迁移完毕")
+	return "error"
 }
 
 // GetClusterNodes 获取节点详情
