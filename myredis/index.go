@@ -518,7 +518,7 @@ func ClusterSlotsMigrating(id, sourceID, targetID string, slotsStart,
 					stepErr2 := []string{"CLUSTER", "SETSLOT", strconv.FormatInt(i, 10), "STABLE"}
 					fn(strings.Join(stepErr2, " "))
 					tmpTargetClient.Do(strArrToInterface(stepErr2)...)
-					goto finish
+					goto fail
 				}
 				for {
 					keys, err := tmpSourceClient.ClusterGetKeysInSlot(int(i), 10).Result()
@@ -528,6 +528,11 @@ func ClusterSlotsMigrating(id, sourceID, targetID string, slotsStart,
 					}
 					if len(keys) == 0 {
 						fn("------------- 所有 key 迁移完毕 -------------")
+						Annouce := []string{"CLUSTER", "SETSLOT", strconv.FormatInt(i, 10), "NODE", targetID}
+						fn(strings.Join(Annouce, " "))
+						tmpSourceClient.Do(strArrToInterface(Annouce)...)
+						fn(strings.Join(Annouce, " "))
+						tmpTargetClient.Do(strArrToInterface(Annouce)...)
 						break
 					}
 					hostNPort := strings.Split(tmpTargetClient.Options().Addr, ":")
@@ -542,24 +547,15 @@ func ClusterSlotsMigrating(id, sourceID, targetID string, slotsStart,
 						}
 					}
 				}
-				goto annouce
-			annouce:
-				{
-					for _, v := range nodesResult {
-						if strings.IndexAny(strings.ToLower(v.ROLE), "master") != -1 {
-							tmpTargetClient := redis.NewClient(&redis.Options{
-								Addr: strings.Split(v.ADDR, "@")[0], // redis v4.x returns the address likes 127.0.0.1:6379@16379     v3.0 likes 127.0.0.1:6379
-							})
-							tmpTargetClient.Close()
-						}
-					}
-				}
 			}
 		}
 	}
 finish:
 	fn("slots 迁移完毕")
-	return "error"
+	return "finish"
+fail:
+	fn("slots 迁移出错,已终止")
+	return "fail"
 }
 
 // GetClusterNodes 获取节点详情
