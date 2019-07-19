@@ -106,7 +106,7 @@
             :width="80"
             :status="slotPercent===1?'exception':'success'"
             :format="(e) => {
-              return e>50?'100%':e + '%';
+              return e===10?'100%':e + '%';
             }"
           />
         </template>

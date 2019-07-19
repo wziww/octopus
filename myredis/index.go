@@ -5,6 +5,8 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net"
+	"octopus/config"
+	"octopus/log"
 	cluster "octopus/myredis/cluster"
 	"strconv"
 	"strings"
@@ -73,6 +75,11 @@ type DetailResult struct {
 
 func init() {
 	redisSources = make(map[string]*target)
+	for _, v := range config.C.Redis {
+		AddSource(v.Name, &redis.Options{
+			Addr: v.Address[0],
+		})
+	}
 }
 
 // strArrToInterface .,..
@@ -131,6 +138,7 @@ func ClusterForget(id string, nodeid string) string {
 		z := redisSources[id].self.(*redis.ClusterClient)
 		str, err := z.ClusterForget(nodeid).Result()
 		if err == nil {
+			log.FMTLog(log.LOGERROR, err)
 			return str
 		}
 		return err.Error()
@@ -151,6 +159,7 @@ func ClusterReplicate(id, host, port, nodeid string) string {
 		defer tmpClient.Close()
 		result, err := tmpClient.ClusterReplicate(nodeid).Result()
 		if err == nil {
+			log.FMTLog(log.LOGERROR, err)
 			return result
 		}
 		return err.Error()
@@ -170,6 +179,7 @@ func ClusterSlotsStats(id string) interface{} {
 		if err == nil {
 			return slots
 		}
+		log.FMTLog(log.LOGERROR, err)
 		return err.Error()
 	}
 	return []byte("error")
@@ -188,6 +198,7 @@ func ClusterSlotsSet(id, host, port string, start, end int64) interface{} {
 		defer tmpClient.Close()
 		result, err := tmpClient.Eval(cluster.AddSlotsLua(start, end), []string{}).Result()
 		if err != nil {
+			log.FMTLog(log.LOGERROR, err)
 			return err.Error()
 		}
 		return result
@@ -238,7 +249,7 @@ finish:
 		pingStr, pingError = c.(*redis.Client).Ping().Result()
 	}
 	if pingError != nil {
-		fmt.Println(pingError)
+		log.FMTLog(log.LOGERROR)
 	}
 	if pingStr == "PONG" {
 		rw.Lock()
@@ -304,6 +315,7 @@ func GetConfig() interface{} {
 			z := v.self.(*redis.Client)
 			str, err := z.Ping().Result()
 			if err != nil || str != "PONG" {
+				log.FMTLog(log.LOGERROR, err)
 				v.Status = "failed"
 			} else {
 				v.Status = "ok"
@@ -312,7 +324,7 @@ func GetConfig() interface{} {
 			z := v.self.(*redis.ClusterClient)
 			str, e := z.ClusterInfo().Result()
 			if e != nil {
-				fmt.Println(e)
+				log.FMTLog(log.LOGERROR, e)
 			} else {
 				for _, x := range toLines(str) {
 					if value := getFromRDSStr(x, "cluster_state:"); value != "" {
@@ -370,6 +382,7 @@ func GetDetail(id string) []*DetailResult {
 		z.ForEachNode(func(c *redis.Client) error {
 			str, nodesError := c.ClusterNodes().Result()
 			if nodesError != nil {
+				log.FMTLog(log.LOGERROR, nodesError)
 				return nodesError
 			}
 			for _, x := range toLines(str) {
@@ -514,60 +527,71 @@ func ClusterSlotsMigrating(id, sourceID, targetID string, slotsStart,
 		{
 			for i := slotsStart; i <= slotsEnd; i++ {
 				step1 := []string{"CLUSTER", "SETSLOT", strconv.FormatInt(i, 10), "MIGRATING", targetID}
-				// fn(strings.Join(step1, " "))
+				log.FMTLog(log.LOGWARN, strings.Join(step1, " "))
 				result, err := tmpSourceClient.Do(strArrToInterface(step1)...).Result()
 				if result != nil {
-					// fn(result.(string))
+					log.FMTLog(log.LOGWARN, result.(string))
 				}
 				step2 := []string{"CLUSTER", "SETSLOT", strconv.FormatInt(i, 10), "IMPORTING", sourceID}
-				// fn(strings.Join(step2, " "))
+				log.FMTLog(log.LOGWARN, strings.Join(step2, " "))
 				result2, err2 := tmpTargetClient.Do(strArrToInterface(step2)...).Result()
 				if result2 != nil {
-					// fn(result2.(string))
+					log.FMTLog(log.LOGWARN, result2.(string))
 				}
 				/*
 				* CLUSTER SETSLOT went error  */
 				if err != nil || err2 != nil || strings.IndexAny(strings.ToLower(result.(string)), "ok") == -1 || strings.IndexAny(strings.ToLower(result2.(string)), "ok") == -1 {
 					if err != nil {
+						log.FMTLog(log.LOGERROR, err)
 						fn(err.Error())
 					}
 					if err2 != nil {
+						log.FMTLog(log.LOGERROR, err2)
 						fn(err2.Error())
 					}
 					stepErr1 := []string{"CLUSTER", "SETSLOT", strconv.FormatInt(i, 10), "STABLE"}
-					// fn(strings.Join(stepErr1, " "))
+					log.FMTLog(log.LOGWARN, strings.Join(stepErr1, " "))
 					tmpSourceClient.Do(strArrToInterface(stepErr1)...)
 					stepErr2 := []string{"CLUSTER", "SETSLOT", strconv.FormatInt(i, 10), "STABLE"}
-					// fn(strings.Join(stepErr2, " "))
+					log.FMTLog(log.LOGWARN, strings.Join(stepErr2, " "))
 					tmpTargetClient.Do(strArrToInterface(stepErr2)...)
 					goto fail
 				}
 				for {
 					keys, err := tmpSourceClient.ClusterGetKeysInSlot(int(i), 10).Result()
 					if err != nil {
-						// fn(err.Error())
+						log.FMTLog(log.LOGERROR, err.Error())
 						goto finish
 					}
 					/*
 					* this slot's keys migraton have been finished   */
 					if len(keys) == 0 {
 						Annouce := []string{"CLUSTER", "SETSLOT", strconv.FormatInt(i, 10), "NODE", targetID}
-						// fn(strings.Join(Annouce, " "))
+						log.FMTLog(log.LOGWARN, strings.Join(Annouce, " "))
 						tmpSourceClient.Do(strArrToInterface(Annouce)...)
-						// fn(strings.Join(Annouce, " "))
+						log.FMTLog(log.LOGWARN, strings.Join(Annouce, " "))
 						tmpTargetClient.Do(strArrToInterface(Annouce)...)
 						break
 					}
 					hostNPort := strings.Split(tmpTargetClient.Options().Addr, ":")
+					var (
+						wg sync.WaitGroup
+					)
 					for _, v := range keys {
-						// stepMigKey := []string{hostNPort[0], hostNPort[1], v, "0", "10s"}
-						_, err := tmpSourceClient.Migrate(hostNPort[0], hostNPort[1], v, 0, time.Second*10).Result()
-						if err != nil {
-							fn(err.Error())
-						} else {
-							// fn(result)
-						}
+						wg.Add(1)
+						go func(v string) {
+							log.FMTLog(log.LOGWARN, strings.Join([]string{hostNPort[0], hostNPort[1], v, "0", "10s"}, " "))
+							result, err := tmpSourceClient.Migrate(hostNPort[0], hostNPort[1], v, 0, time.Second*10).Result()
+							if err != nil {
+								log.FMTLog(log.LOGERROR, err)
+								fn(err.Error())
+							} else {
+								log.FMTLog(log.LOGWARN, result)
+							}
+							wg.Done()
+						}(v)
 					}
+					wg.Wait()
 				}
 				fn(strconv.FormatInt(slotsEnd-slotsStart, 10)+" "+strconv.FormatInt(i-slotsStart, 10), 0)
 			}

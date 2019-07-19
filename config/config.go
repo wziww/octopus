@@ -1,13 +1,10 @@
-package main
+package config
 
 import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"octopus/myredis"
 	"os"
-
-	"github.com/go-redis/redis"
 
 	"github.com/BurntSushi/toml"
 )
@@ -19,6 +16,12 @@ var C *Config
 type Config struct {
 	Server *ConfigServer `toml:"server"`
 	Redis  []RedisDetail `toml:"redis"`
+	Log    *Log
+}
+
+// Log 日志配置
+type Log struct {
+	LogPath string `toml:"log_path"`
 }
 
 // ConfigServer 服务端配置
@@ -44,10 +47,5 @@ func init() {
 		}
 		C = &Config{}
 		toml.Decode(string(fdata), C)
-	}
-	for _, v := range C.Redis {
-		myredis.AddSource(v.Name, &redis.Options{
-			Addr: v.Address[0],
-		})
 	}
 }
