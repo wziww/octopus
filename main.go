@@ -26,7 +26,8 @@ func (p *program) Init(e svc.Environment) error {
 	return nil
 }
 func (p *program) Start() error {
-	log.SetLogLevel(log.LOGWARN | log.LOGERROR | log.LOGDEBUG)
+	log.SetLogLevel(log.LOGDEBUG)
+	log.FMTLog(log.LOGDEBUG, time.Now().Format("2006-01-02 15:04:05"))
 	go func() {
 		server := &http.Server{
 			Addr:         config.C.Server.ListenAddress,
