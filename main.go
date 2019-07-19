@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"octopus/config"
+	"octopus/log"
 	_ "octopus/myredis"
 	"strings"
 	"syscall"
@@ -24,9 +26,10 @@ func (p *program) Init(e svc.Environment) error {
 	return nil
 }
 func (p *program) Start() error {
+	log.SetLogLevel(log.LOGWARN | log.LOGERROR | log.LOGDEBUG)
 	go func() {
 		server := &http.Server{
-			Addr:         C.Server.ListenAddress,
+			Addr:         config.C.Server.ListenAddress,
 			WriteTimeout: 5 * time.Second,
 			ReadTimeout:  5 * time.Second,
 		}
