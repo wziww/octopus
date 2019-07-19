@@ -100,7 +100,15 @@
         v-if="type==='cluster'"
       >
         <template slot-scope="slotPercent">
-          <a-progress type="circle" :percent="parseInt(slotPercent * 100)" :width="80" />
+          <a-progress
+            type="circle"
+            :percent="parseInt(slotPercent * 100)"
+            :width="80"
+            :status="slotPercent===1?'exception':'success'"
+            :format="(e) => {
+              return e>50?'100%':e + '%';
+            }"
+          />
         </template>
       </a-table-column>
       <a-table-column title="占用内存" data-index="UsedMemory" key="UsedMemory">
