@@ -449,17 +449,17 @@ func GetDetail(id string) []*DetailResult {
 					SLOT:   slot,
 					Type:   "cluster",
 				})
-				resultAppendLock.Unlock()
+				break
+				// resultAppendLock.Unlock()
 			}
+			// resultAppendLock.Lock() // RLOCK BETTER
 			for _, v := range result {
 				oaddr := c.Options().Addr
-				log.FMTLog(log.LOGDEBUG, v)
-				log.FMTLog(log.LOGDEBUG, v.ADDR)
-				log.FMTLog(log.LOGDEBUG, oaddr)
 				if len(v.ADDR) >= len(oaddr) && len(strings.Split(v.ADDR, oaddr)) > 1 {
 					getMemory(c, v)
 				}
 			}
+			resultAppendLock.Unlock()
 			return nil
 		})
 		servers := GetServer(id)
