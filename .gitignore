@@ -5,3 +5,4 @@ debug
 /build
 /src/package-lock.json
 Gopkg.lock
+/test

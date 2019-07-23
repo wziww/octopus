@@ -1,5 +1,5 @@
 [server]
-listen_address="0.0.0.0:8081"
+listen_address="0.0.0.0:8081" # websocket port
 # [[redis]]
 #   name="impress"
 #   address=["10.0.6.49:6379"]
@@ -16,5 +16,9 @@ listen_address="0.0.0.0:8081"
   address=["10.0.6.49:6381"]
   db=0
 [log]
-  log_path="./log/"
+  log_path="./tmp/"
+[prometheus]
+  path="/prometheus"
+  
+
 

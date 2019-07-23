@@ -117,8 +117,8 @@ func strArrToInterface(strArr []string) []interface{} {
 	return s
 }
 
-// trim ...
-func trim(str string) string {
+// Trim ...
+func Trim(str string) string {
 	return strings.Replace(
 		strings.Replace(str, "\r", "", -1),
 		"\n", "", -1)
@@ -264,7 +264,7 @@ func AddSource(name string, opt *redis.Options) int {
 	var pingError error
 	for _, v := range toLines(clusterInfoStr) {
 		if len(v) > len("cluster_enabled:") && v[:len("cluster_enabled:")] == "cluster_enabled:" &&
-			trim(v[len("cluster_enabled:"):]) == "1" {
+			Trim(v[len("cluster_enabled:"):]) == "1" {
 			REDISTYPE = "cluster"
 			c.(*redis.Client).Close()
 			c = redis.NewClusterClient(&redis.ClusterOptions{
@@ -358,7 +358,7 @@ func GetConfig() interface{} {
 			} else {
 				for _, x := range toLines(str) {
 					if value := getFromRDSStr(x, "cluster_state:"); value != "" {
-						v.Status = trim(value)
+						v.Status = Trim(value)
 					}
 				}
 			}
@@ -450,9 +450,7 @@ func GetDetail(id string) []*DetailResult {
 					Type:   "cluster",
 				})
 				break
-				// resultAppendLock.Unlock()
 			}
-			// resultAppendLock.Lock() // RLOCK BETTER
 			for _, v := range result {
 				oaddr := c.Options().Addr
 				if len(v.ADDR) >= len(oaddr) && len(strings.Split(v.ADDR, oaddr)) > 1 {
