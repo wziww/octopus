@@ -206,7 +206,7 @@ export default {
                   has++;
                 }
               }
-              return has / 16383;
+              return (has + 1) / 16384;
             })(),
             memoryPercent: (() => {
               const percent = Number(i.UsedMemory) / Number(i.Maxmemory);

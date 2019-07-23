@@ -22,12 +22,36 @@ var (
 	// REDISINITERROR 节点启动失败
 	REDISINITERROR = -2
 )
-var (
+
+type _redisSources struct {
+	RS map[string]*target
 	rw sync.RWMutex
-)
+}
 
 // 监控的 redis 集合
-var redisSources map[string]*target
+var redisSources *_redisSources
+
+func (r *_redisSources) Set(k string, t *target) {
+	r.rw.Lock()
+	defer r.rw.Unlock()
+	r.RS[k] = t
+}
+func (r *_redisSources) Get(k string) *target {
+	r.rw.RLock()
+	defer r.rw.RUnlock()
+	z := r.RS[k]
+	return z
+}
+func (r *_redisSources) Range() map[string]*target {
+	r.rw.RLock()
+	defer r.rw.RUnlock()
+	return r.RS
+}
+func (r *_redisSources) Delete(k string) {
+	r.rw.Lock()
+	defer r.rw.Unlock()
+	delete(r.RS, k)
+}
 
 type target struct {
 	Name        string
@@ -74,7 +98,9 @@ type DetailResult struct {
 }
 
 func init() {
-	redisSources = make(map[string]*target)
+	redisSources = &_redisSources{
+		RS: make(map[string]*target),
+	}
 	for _, v := range config.C.Redis {
 		AddSource(v.Name, &redis.Options{
 			Addr: v.Address[0],
@@ -113,45 +139,47 @@ func getFromRDSStr(str1, str2 string) string {
 
 // ClusterMeet ...
 func ClusterMeet(id string, host string, port string) string {
-	if redisSources[id] == nil || redisSources[id].Type != "cluster" {
+	if redisSources.Get(id) == nil || redisSources.Get(id).Type != "cluster" {
 		return "error"
 	}
-	switch redisSources[id].self.(type) {
+	switch redisSources.Get(id).self.(type) {
 	case *redis.ClusterClient:
-		z := redisSources[id].self.(*redis.ClusterClient)
+		z := redisSources.Get(id).self.(*redis.ClusterClient)
 		str, err := z.ClusterMeet(host, port).Result()
 		if err == nil {
 			return str
 		}
 		return err.Error()
+	default:
 	}
 	return "error"
 }
 
 // ClusterForget ...
 func ClusterForget(id string, nodeid string) string {
-	if redisSources[id] == nil || redisSources[id].Type != "cluster" {
+	if redisSources.Get(id) == nil || redisSources.Get(id).Type != "cluster" {
 		return "error"
 	}
-	switch redisSources[id].self.(type) {
+	switch redisSources.Get(id).self.(type) {
 	case *redis.ClusterClient:
-		z := redisSources[id].self.(*redis.ClusterClient)
+		z := redisSources.Get(id).self.(*redis.ClusterClient)
 		str, err := z.ClusterForget(nodeid).Result()
 		if err == nil {
 			log.FMTLog(log.LOGERROR, err)
 			return str
 		}
 		return err.Error()
+	default:
 	}
 	return "error"
 }
 
 // ClusterReplicate ...
 func ClusterReplicate(id, host, port, nodeid string) string {
-	if redisSources[id] == nil || redisSources[id].Type != "cluster" {
+	if redisSources.Get(id) == nil || redisSources.Get(id).Type != "cluster" {
 		return "error"
 	}
-	switch redisSources[id].self.(type) {
+	switch redisSources.Get(id).self.(type) {
 	case *redis.ClusterClient:
 		tmpClient := redis.NewClient(&redis.Options{
 			Addr: host + ":" + port,
@@ -163,34 +191,36 @@ func ClusterReplicate(id, host, port, nodeid string) string {
 			return result
 		}
 		return err.Error()
+	default:
 	}
 	return "error"
 }
 
 // ClusterSlotsStats slots 情况
 func ClusterSlotsStats(id string) interface{} {
-	if redisSources[id] == nil || redisSources[id].Type != "cluster" {
+	if redisSources.Get(id) == nil || redisSources.Get(id).Type != "cluster" {
 		return []byte("error")
 	}
-	switch redisSources[id].self.(type) {
+	switch redisSources.Get(id).self.(type) {
 	case *redis.ClusterClient:
-		z := redisSources[id].self.(*redis.ClusterClient)
+		z := redisSources.Get(id).self.(*redis.ClusterClient)
 		slots, err := z.ClusterSlots().Result()
 		if err == nil {
 			return slots
 		}
 		log.FMTLog(log.LOGERROR, err)
 		return err.Error()
+	default:
 	}
 	return []byte("error")
 }
 
 // ClusterSlotsSet ...
 func ClusterSlotsSet(id, host, port string, start, end int64) interface{} {
-	if redisSources[id] == nil || redisSources[id].Type != "cluster" {
+	if redisSources.Get(id) == nil || redisSources.Get(id).Type != "cluster" {
 		return "error"
 	}
-	switch redisSources[id].self.(type) {
+	switch redisSources.Get(id).self.(type) {
 	case *redis.ClusterClient:
 		tmpClient := redis.NewClient(&redis.Options{
 			Addr: host + ":" + port,
@@ -202,6 +232,7 @@ func ClusterSlotsSet(id, host, port string, start, end int64) interface{} {
 			return err.Error()
 		}
 		return result
+	default:
 	}
 	return "error"
 }
@@ -221,7 +252,7 @@ func AddSource(name string, opt *redis.Options) int {
 	n := fmt.Sprintf("%x", md5.Sum([]byte(name)))
 	REDISTYPE := "single"
 	var c interface{}
-	if redisSources[n] != nil {
+	if redisSources.Get(n) != nil {
 		return REDISALREADYEXISTS
 	}
 	c = redis.NewClient(opt)
@@ -252,14 +283,12 @@ finish:
 		log.FMTLog(log.LOGERROR)
 	}
 	if pingStr == "PONG" {
-		rw.Lock()
-		redisSources[n] = &target{
+		redisSources.Set(n, &target{
 			Name:  name,
 			Type:  REDISTYPE,
 			Addrs: []string{opt.Addr},
 			self:  c,
-		}
-		rw.Unlock()
+		})
 	}
 	return 0
 }
@@ -281,20 +310,20 @@ func getServer(z *redis.Client) *Server {
 // GetServer 获取服务信息
 // redis info server
 func GetServer(id string) []*Server {
-	if redisSources[id] == nil {
+	if redisSources.Get(id) == nil {
 		return nil
 	}
 	var result []*Server
 	var (
 		mutex sync.Mutex
 	)
-	switch redisSources[id].self.(type) {
+	switch redisSources.Get(id).self.(type) {
 	case *redis.Client:
-		z := redisSources[id].self.(*redis.Client)
+		z := redisSources.Get(id).self.(*redis.Client)
 		v := getServer(z)
 		return []*Server{v}
 	case *redis.ClusterClient:
-		z := redisSources[id].self.(*redis.ClusterClient)
+		z := redisSources.Get(id).self.(*redis.ClusterClient)
 		z.ForEachNode(func(c *redis.Client) error {
 			v := getServer(c)
 			mutex.Lock()
@@ -303,13 +332,14 @@ func GetServer(id string) []*Server {
 			return nil
 		})
 		return result
+	default:
 	}
 	return nil
 }
 
 // GetConfig 获取配置好的数据源
 func GetConfig() interface{} {
-	for _, v := range redisSources {
+	for _, v := range redisSources.Range() {
 		switch v.self.(type) {
 		case *redis.Client: // 单机模式
 			z := v.self.(*redis.Client)
@@ -334,7 +364,7 @@ func GetConfig() interface{} {
 			}
 		}
 	}
-	return redisSources
+	return redisSources.Range()
 }
 
 func getMemory(z *redis.Client, v *DetailResult) {
@@ -361,12 +391,12 @@ func getMemory(z *redis.Client, v *DetailResult) {
 
 // GetDetail 获取节点详情
 func GetDetail(id string) []*DetailResult {
-	if redisSources[id] == nil {
+	if redisSources.Get(id) == nil {
 		return nil
 	}
-	switch redisSources[id].self.(type) {
+	switch redisSources.Get(id).self.(type) {
 	case *redis.Client:
-		z := redisSources[id].self.(*redis.Client)
+		z := redisSources.Get(id).self.(*redis.Client)
 		v := &DetailResult{
 			ADDR: z.Options().Addr,
 			Type: "single",
@@ -374,7 +404,7 @@ func GetDetail(id string) []*DetailResult {
 		getMemory(z, v)
 		return []*DetailResult{v}
 	case *redis.ClusterClient:
-		z := redisSources[id].self.(*redis.ClusterClient)
+		z := redisSources.Get(id).self.(*redis.ClusterClient)
 		var result []*DetailResult
 		var (
 			resultAppendLock sync.Mutex
@@ -423,6 +453,7 @@ func GetDetail(id string) []*DetailResult {
 			}
 			for _, v := range result {
 				oaddr := c.Options().Addr
+				log.FMTLog(log.LOGDEBUG, v)
 				log.FMTLog(log.LOGDEBUG, v.ADDR)
 				log.FMTLog(log.LOGDEBUG, oaddr)
 				if len(v.ADDR) >= len(oaddr) && len(strings.Split(v.ADDR, oaddr)) > 1 {
@@ -440,18 +471,19 @@ func GetDetail(id string) []*DetailResult {
 			}
 		}
 		return result
+	default:
 	}
 	return nil
 }
 
 // 获取不含 slots 的 master 节点
 func getNoSlotsMaster(id string) (rst []*DetailResult) {
-	if redisSources[id] == nil || redisSources[id].Type != "cluster" {
+	if redisSources.Get(id) == nil || redisSources.Get(id).Type != "cluster" {
 		return
 	}
-	switch redisSources[id].self.(type) {
+	switch redisSources.Get(id).self.(type) {
 	case *redis.ClusterClient:
-		z := redisSources[id].self.(*redis.ClusterClient)
+		z := redisSources.Get(id).self.(*redis.ClusterClient)
 		cr, _ := z.ClusterNodes().Result()
 		crArr := toLines(cr)
 		for _, v := range crArr {
@@ -473,6 +505,7 @@ func getNoSlotsMaster(id string) (rst []*DetailResult) {
 				ROLE: vArr[2],
 			})
 		}
+	default:
 	}
 	return
 }
@@ -480,10 +513,10 @@ func getNoSlotsMaster(id string) (rst []*DetailResult) {
 // ClusterSlotsMigrating slots 迁移
 func ClusterSlotsMigrating(id, sourceID, targetID string, slotsStart,
 	slotsEnd int64, fn func(string, ...int64)) interface{} {
-	if redisSources[id] == nil || redisSources[id].Type != "cluster" {
+	if redisSources.Get(id) == nil || redisSources.Get(id).Type != "cluster" {
 		return "error"
 	}
-	switch redisSources[id].self.(type) {
+	switch redisSources.Get(id).self.(type) {
 	case *redis.ClusterClient:
 		nodesResult := GetDetail(id)
 		var (
@@ -598,6 +631,7 @@ func ClusterSlotsMigrating(id, sourceID, targetID string, slotsStart,
 				fn(strconv.FormatInt(slotsEnd-slotsStart, 10)+" "+strconv.FormatInt(i-slotsStart, 10), 0)
 			}
 		}
+	default:
 	}
 finish:
 	fn("slots 迁移完毕")
@@ -609,16 +643,17 @@ fail:
 
 // GetClusterNodes 获取节点详情
 func GetClusterNodes(id string) string {
-	if redisSources[id] == nil {
+	if redisSources.Get(id) == nil {
 		return ""
 	}
-	switch redisSources[id].Type {
+	switch redisSources.Get(id).Type {
 	case "single":
 		return ""
 	case "cluster":
-		z := redisSources[id].self.(*redis.ClusterClient)
+		z := redisSources.Get(id).self.(*redis.ClusterClient)
 		result, _ := z.ClusterNodes().Result()
 		return result
+	default:
 	}
 	return ""
 }
@@ -648,20 +683,20 @@ func getStats(z *redis.Client) *Stats {
 // GetStats 获取节点详情
 // redis  info STATS
 func GetStats(id string) []*Stats {
-	if redisSources[id] == nil {
+	if redisSources.Get(id) == nil {
 		return nil
 	}
 	var result []*Stats
 	var (
 		mutex sync.Mutex
 	)
-	switch redisSources[id].Type {
+	switch redisSources.Get(id).Type {
 	case "single":
-		z := redisSources[id].self.(*redis.Client)
+		z := redisSources.Get(id).self.(*redis.Client)
 		v := getStats(z)
 		return []*Stats{v}
 	case "cluster":
-		z := redisSources[id].self.(*redis.ClusterClient)
+		z := redisSources.Get(id).self.(*redis.ClusterClient)
 		z.ForEachNode(func(c *redis.Client) error {
 			v := getStats(c)
 			mutex.Lock()
@@ -670,23 +705,22 @@ func GetStats(id string) []*Stats {
 			return nil
 		})
 		return result
+	default:
 	}
 	return nil
 }
 
 // RemoveSource 节点配置移除
 func RemoveSource(id string) error {
-	if redisSources[id] == nil {
+	if redisSources.Get(id) == nil {
 		return nil
 	}
-	switch redisSources[id].self.(type) {
+	switch redisSources.Get(id).self.(type) {
 	case *redis.Client:
-		redisSources[id].self.(*redis.Client).Close()
+		redisSources.Get(id).self.(*redis.Client).Close()
 	case *redis.ClusterClient:
-		redisSources[id].self.(*redis.ClusterClient).Close()
+		redisSources.Get(id).self.(*redis.ClusterClient).Close()
 	}
-	rw.Lock()
-	delete(redisSources, id)
-	rw.Unlock()
+	redisSources.Delete(id)
 	return nil
 }

@@ -5,6 +5,7 @@ import (
 	"octopus/config"
 	"os"
 	"path"
+	"sync"
 	"time"
 )
 
@@ -19,20 +20,59 @@ var (
 	LOGDEBUG = 1 << 3
 )
 var logLevel int
-var fd *os.File
+
+type _f struct {
+	fd     *os.File
+	fdlock sync.RWMutex
+}
+
+var f *_f
+
+func (file *_f) Set(fd *os.File) {
+	file.fdlock.Lock()
+	defer file.fdlock.Unlock()
+	file.fd = fd
+}
+func (file *_f) Print(strs ...interface{}) {
+	file.fdlock.Lock()
+	defer file.fdlock.Unlock()
+	_, e := fmt.Fprintln(file.fd, strs...)
+	if e != nil {
+		fmt.Println(e)
+	}
+}
 
 func init() {
+	f = &_f{}
 	logLevel = LOGNONE
 	dir := config.C.Log.LogPath
-	var err error
+	LOGFILETIME := time.Now().Format("2006010215")
 	if dir != "" {
-		fd, err = os.OpenFile(path.Join(dir, time.Now().Format("20060102")), os.O_APPEND|os.O_CREATE|os.O_RDWR, 0777)
+		fd, err := os.OpenFile(path.Join(dir, LOGFILETIME), os.O_APPEND|os.O_CREATE|os.O_RDWR, 0666)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		f.Set(fd)
+		go func() {
+			for {
+				select {
+				case <-time.After(time.Second * 10):
+					CURRENTTIME := time.Now().Format("2006010215")
+					if CURRENTTIME != LOGFILETIME {
+						fd, err := os.OpenFile(path.Join(dir, CURRENTTIME), os.O_APPEND|os.O_CREATE|os.O_RDWR, 0666)
+						f.Set(fd)
+						if err != nil {
+							fmt.Println(err)
+							os.Exit(1)
+						}
+						LOGFILETIME = CURRENTTIME
+					}
+				}
+			}
+		}()
 	} else {
-		fd = os.Stdout
-	}
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		f.Set(os.Stdout)
 	}
 }
 
@@ -44,9 +84,6 @@ func SetLogLevel(i int) {
 // FMTLog ...
 func FMTLog(level int, strs ...interface{}) {
 	if (logLevel & level) > 0 {
-		_, e := fmt.Fprintln(fd, strs...)
-		if e != nil {
-			fmt.Println(e)
-		}
+		f.Print(strs...)
 	}
 }
