@@ -6,3 +6,4 @@ debug
 /src/package-lock.json
 Gopkg.lock
 /test
+tmp

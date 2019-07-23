@@ -39,6 +39,10 @@ func (p *program) Start() error {
 				ws(w, r)
 				return
 			}
+			if len(r.RequestURI) >= len("/prometheus") && r.RequestURI[:len("/prometheus")] == "/prometheus" {
+				httprouter(w, r)
+				return
+			}
 			params := strings.Split(r.RequestURI, "/")
 			for _, v := range params[len(params)-1:] {
 				for _, z := range v {
