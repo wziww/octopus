@@ -14,18 +14,19 @@ var C *Config
 
 // Config 配置
 type Config struct {
-	Server *ConfigServer `toml:"server"`
+	Server *Server       `toml:"server"`
 	Redis  []RedisDetail `toml:"redis"`
 	Log    *Log
 }
 
 // Log 日志配置
 type Log struct {
-	LogPath string `toml:"log_path"`
+	LogPath  string   `toml:"log_path"`
+	LogLevel []string `toml:"log_level"`
 }
 
-// ConfigServer 服务端配置
-type ConfigServer struct {
+// Server 服务端配置
+type Server struct {
 	ListenAddress string `toml:"listen_address"`
 	PidFile       string `toml:"pid_file"`
 }

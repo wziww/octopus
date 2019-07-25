@@ -280,9 +280,10 @@ finish:
 		pingStr, pingError = c.(*redis.Client).Ping().Result()
 	}
 	if pingError != nil {
-		log.FMTLog(log.LOGERROR)
+		log.FMTLog(log.LOGERROR, pingError)
 	}
 	if pingStr == "PONG" {
+		log.FMTLog(log.LOGWARN, opt.Addr, "REDIS JOINED")
 		redisSources.Set(n, &target{
 			Name:  name,
 			Type:  REDISTYPE,

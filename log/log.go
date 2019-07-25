@@ -34,6 +34,8 @@ func (file *_f) Set(fd *os.File) {
 	file.fd = fd
 }
 func (file *_f) Print(strs ...interface{}) {
+	strs = append(make([]interface{}, 1), strs...)
+	strs[0] = time.Now().Format("2006-01-02 15:04:05") + ":"
 	file.fdlock.Lock()
 	defer file.fdlock.Unlock()
 	_, e := fmt.Fprintln(file.fd, strs...)
@@ -74,6 +76,19 @@ func init() {
 	} else {
 		f.Set(os.Stdout)
 	}
+	for _, v := range config.C.Log.LogLevel {
+		switch v {
+		case "LOGERROR":
+			SetLogLevel(LOGERROR)
+			FMTLog(LOGWARN, "LOGERROR ENABLE")
+		case "LOGWARN":
+			SetLogLevel(LOGWARN)
+			FMTLog(LOGWARN, "LOGWARN ENABLE")
+		case "LOGDEBUG":
+			SetLogLevel(LOGDEBUG)
+			FMTLog(LOGWARN, "LOGDEBUG ENABLE")
+		}
+	}
 }
 
 // SetLogLevel 设置日志级别，多次调用权限叠加
@@ -84,6 +99,15 @@ func SetLogLevel(i int) {
 // FMTLog ...
 func FMTLog(level int, strs ...interface{}) {
 	if (logLevel & level) > 0 {
+		strs = append(make([]interface{}, 1), strs...)
+		switch level {
+		case LOGERROR:
+			strs[0] = "[LOGERROR]"
+		case LOGWARN:
+			strs[0] = "[LOGWARN]"
+		case LOGDEBUG:
+			strs[0] = "[LOGDEBUG]"
+		}
 		f.Print(strs...)
 	}
 }

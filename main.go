@@ -26,8 +26,7 @@ func (p *program) Init(e svc.Environment) error {
 	return nil
 }
 func (p *program) Start() error {
-	log.SetLogLevel(log.LOGDEBUG)
-	log.FMTLog(log.LOGDEBUG, time.Now().Format("2006-01-02 15:04:05"))
+	log.FMTLog(log.LOGWARN, "octopus start")
 	go func() {
 		server := &http.Server{
 			Addr:         config.C.Server.ListenAddress,

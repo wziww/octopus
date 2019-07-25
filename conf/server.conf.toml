@@ -16,7 +16,8 @@ listen_address="0.0.0.0:8081" # websocket port
   address=["10.0.6.49:6381"]
   db=0
 [log]
-  log_path="./tmp/"
+  # log_path="./tmp/"  # 日志存放目录,需人为创建好目录，不设置该值的时候，默认 stdout 进行日志输出
+  log_level=["LOGERROR","LOGWARN"] # LOGNONE 「禁止输出」 |  LOGERROR「错误级别日志」  |  LOGWARN「警告级别」  |  LOGDEBUG「debug 级别，该级别包含大量日志（含所有操作命令记录），谨慎使用」    默认 LOGERROR
 [prometheus]
   path="/prometheus"
   
