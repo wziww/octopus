@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"octopus/message"
 	"octopus/myredis"
 	"sync"
 
@@ -65,7 +66,7 @@ func ws(w http.ResponseWriter, r *http.Request) {
 
 type socketReturn struct {
 	Type string
-	Data interface{}
+	Data string
 }
 type socketRecv struct {
 	Func string `json:"Func"`
@@ -92,14 +93,14 @@ func handle(message []byte, connID string, c *websocket.Conn) []byte {
 }
 func init() {
 	routerAll = make(map[string]router)
-	Router("/config/redis", func(data string, conns ...*websocket.Conn) []byte {
+	Router("/redis", func(data string, conns ...*websocket.Conn) []byte {
 		bytes, _ := json.Marshal(&socketReturn{
-			Type: "/config/redis",
+			Type: "/redis",
 			Data: myredis.GetConfig(),
 		})
 		return bytes
 	})
-	Router("/config/redis/slots/migrating", func(data string, conns ...*websocket.Conn) []byte {
+	Router("/redis/slots/migrating", func(data string, conns ...*websocket.Conn) []byte {
 		body := &struct {
 			ID         string `json:"id"`
 			SourceID   string `json:"sourceId"`
@@ -110,15 +111,15 @@ func init() {
 		json.Unmarshal([]byte(data), body)
 		myredis.ClusterSlotsMigrating(body.ID, body.SourceID, body.TargetID, body.SlotsStart, body.SlotsEnd, func(str string, flag ...int64) {
 			if len(conns) > 0 {
-				t := "/config/redis/slots/migrating"
+				t := "/redis/slots/migrating"
 				if len(flag) > 0 {
 					if flag[0] == 0 {
-						t = "/config/redis/slots/migrating/0"
+						t = "/redis/slots/migrating/0"
 					}
 				}
 				bts, _ := json.Marshal(&socketReturn{
 					Type: t,
-					Data: str,
+					Data: message.Res(200, str),
 				})
 				go SafeWrite(conns[0],
 					bts)
@@ -126,29 +127,29 @@ func init() {
 		})
 		return []byte{}
 	})
-	Router("/config/redis/clusterSlots", func(data string, conns ...*websocket.Conn) []byte {
+	Router("/redis/clusterSlots", func(data string, conns ...*websocket.Conn) []byte {
 		c := &struct {
 			ID string `json:"id"`
 		}{}
 		json.Unmarshal([]byte(data), c)
 		bytes, _ := json.Marshal(&socketReturn{
-			Type: "/config/redis/clusterSlots",
+			Type: "/redis/clusterSlots",
 			Data: myredis.ClusterSlotsStats(c.ID),
 		})
 		return bytes
 	})
-	Router("/config/redis/clusterNodes", func(data string, conns ...*websocket.Conn) []byte {
+	Router("/redis/clusterNodes", func(data string, conns ...*websocket.Conn) []byte {
 		c := &struct {
 			ID string `json:"id"`
 		}{}
 		json.Unmarshal([]byte(data), c)
 		bytes, _ := json.Marshal(&socketReturn{
-			Type: "/config/redis/clusterNodes",
+			Type: "/redis/clusterNodes",
 			Data: myredis.GetClusterNodes(c.ID),
 		})
 		return bytes
 	})
-	Router("/config/redis/setSlots", func(data string, conns ...*websocket.Conn) []byte {
+	Router("/redis/setSlots", func(data string, conns ...*websocket.Conn) []byte {
 		c := &struct {
 			ID    string `json:"id"`
 			Host  string `json:"host"`
@@ -158,12 +159,12 @@ func init() {
 		}{}
 		json.Unmarshal([]byte(data), c)
 		bytes, _ := json.Marshal(&socketReturn{
-			Type: "/config/redis/setSlots",
+			Type: "/redis/setSlots",
 			Data: myredis.ClusterSlotsSet(c.ID, c.Host, c.Port, c.Start, c.End),
 		})
 		return bytes
 	})
-	Router("/config/redis/clusterReplicate", func(data string, conns ...*websocket.Conn) []byte {
+	Router("/redis/clusterReplicate", func(data string, conns ...*websocket.Conn) []byte {
 		c := &struct {
 			ID     string `json:"id"`
 			Host   string `json:"host"`
@@ -172,24 +173,24 @@ func init() {
 		}{}
 		json.Unmarshal([]byte(data), c)
 		bytes, _ := json.Marshal(&socketReturn{
-			Type: "/config/redis/clusterReplicate",
+			Type: "/redis/clusterReplicate",
 			Data: myredis.ClusterReplicate(c.ID, c.Host, c.Port, c.NodeID),
 		})
 		return bytes
 	})
-	Router("/config/redis/clusterForget", func(data string, conns ...*websocket.Conn) []byte {
+	Router("/redis/clusterForget", func(data string, conns ...*websocket.Conn) []byte {
 		c := &struct {
 			ID     string `json:"id"`
 			NodeID string `json:"nodeid"`
 		}{}
 		json.Unmarshal([]byte(data), c)
 		bytes, _ := json.Marshal(&socketReturn{
-			Type: "/config/redis/clusterForget",
+			Type: "/redis/clusterForget",
 			Data: myredis.ClusterForget(c.ID, c.NodeID),
 		})
 		return bytes
 	})
-	Router("/config/redis/clusterMeet", func(data string, conns ...*websocket.Conn) []byte {
+	Router("/redis/clusterMeet", func(data string, conns ...*websocket.Conn) []byte {
 		c := &struct {
 			ID   string `json:"id"`
 			Host string `json:"host"`
@@ -197,20 +198,19 @@ func init() {
 		}{}
 		json.Unmarshal([]byte(data), c)
 		bytes, _ := json.Marshal(&socketReturn{
-			Type: "/config/redis/clusterMeet",
+			Type: "/redis/clusterMeet",
 			Data: myredis.ClusterMeet(c.ID, c.Host, c.Port),
 		})
 		return bytes
 	})
-	Router("/config/redis/detail", func(data string, conns ...*websocket.Conn) []byte {
+	Router("/redis/detail", func(data string, conns ...*websocket.Conn) []byte {
 		c := &struct {
 			ID string `json:"id"`
 		}{}
 		json.Unmarshal([]byte(data), c)
-		result := myredis.GetDetail(c.ID)
 		bytes, _ := json.Marshal(&socketReturn{
-			Type: "/config/redis/detail",
-			Data: result,
+			Type: "/redis/detail",
+			Data: myredis.GetDetail(c.ID),
 		})
 		return bytes
 	})
@@ -222,7 +222,7 @@ func init() {
 		myredis.RemoveSource(c.ID)
 		bytes, _ := json.Marshal(&socketReturn{
 			Type: "/config/redis/del",
-			Data: "success",
+			Data: message.Res(200, "success"),
 		})
 		return bytes
 	})

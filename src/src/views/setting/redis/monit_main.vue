@@ -20,6 +20,7 @@
   </div>
 </template>
 <script>
+import hd from "../../../lib/ws";
 let chartData = {};
 let t = null;
 let index = ["primary", "default", "default", "default", "default", "default"];
@@ -70,7 +71,7 @@ export default {
     };
     const that = this;
     this.$socket.sendObj({
-      Func: "/config/redis/detail",
+      Func: "/redis/detail",
       Data: JSON.stringify({ id: that.$route.query.id })
     });
     this.$socket.sendObj({
@@ -79,7 +80,7 @@ export default {
     });
     t = setInterval(() => {
       this.$socket.sendObj({
-        Func: "/config/redis/detail",
+        Func: "/redis/detail",
         Data: JSON.stringify({ id: that.$route.query.id })
       });
       this.$socket.sendObj({
@@ -87,9 +88,8 @@ export default {
         Data: JSON.stringify({ id: that.$route.query.id })
       });
     }, interTime);
-    this.$socket.onmessage = da => {
-      const d = JSON.parse(da.data);
-      if (d.Type === "/config/redis/detail") {
+    this.$socket.onmessage = hd(d => {
+      if (d.Type === "/redis/detail") {
         let UsedMemoryTotal = 0;
         // let TotalSystemMemoryTotal = 0;
         let Maxmemory = 0;
@@ -135,7 +135,7 @@ export default {
           Ops: InstantaneousOpsPerSec
         });
       }
-    };
+    });
 
     return {
       chartData,
@@ -176,7 +176,7 @@ export default {
           window.clearInterval(t);
           t = setInterval(() => {
             this.$socket.sendObj({
-              Func: "/config/redis/detail",
+              Func: "/redis/detail",
               Data: JSON.stringify({ id: that.$route.query.id })
             });
             this.$socket.sendObj({
@@ -191,7 +191,7 @@ export default {
           window.clearInterval(t);
           t = setInterval(() => {
             this.$socket.sendObj({
-              Func: "/config/redis/detail",
+              Func: "/redis/detail",
               Data: JSON.stringify({ id: that.$route.query.id })
             });
             this.$socket.sendObj({
@@ -206,7 +206,7 @@ export default {
           window.clearInterval(t);
           t = setInterval(() => {
             this.$socket.sendObj({
-              Func: "/config/redis/detail",
+              Func: "/redis/detail",
               Data: JSON.stringify({ id: that.$route.query.id })
             });
             this.$socket.sendObj({
@@ -221,7 +221,7 @@ export default {
           window.clearInterval(t);
           t = setInterval(() => {
             this.$socket.sendObj({
-              Func: "/config/redis/detail",
+              Func: "/redis/detail",
               Data: JSON.stringify({ id: that.$route.query.id })
             });
             this.$socket.sendObj({
@@ -236,7 +236,7 @@ export default {
           window.clearInterval(t);
           t = setInterval(() => {
             this.$socket.sendObj({
-              Func: "/config/redis/detail",
+              Func: "/redis/detail",
               Data: JSON.stringify({ id: that.$route.query.id })
             });
             this.$socket.sendObj({
@@ -251,7 +251,7 @@ export default {
           window.clearInterval(t);
           t = setInterval(() => {
             this.$socket.sendObj({
-              Func: "/config/redis/detail",
+              Func: "/redis/detail",
               Data: JSON.stringify({ id: that.$route.query.id })
             });
             this.$socket.sendObj({

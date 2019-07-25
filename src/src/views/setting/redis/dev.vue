@@ -104,32 +104,6 @@
           <a-button style="width: 30%;float: left;" class="submit" type="primary">提交</a-button>
         </a-popconfirm>
       </a-drawer>
-      <!-- <a-button class="eachHandle" @click="slotsDel" type="primary">slots 删除</a-button>
-      <a-drawer
-        title="slots 删除"
-        placement="top"
-        @close="slotsDelClose"
-        :closable="true"
-        :visible="slotsDelShow"
-        height="400"
-      >
-        <div class="each-input">
-          <a-input placeholder="需要设置为从节点的 host" @change="inputSlotsDelHost" />
-        </div>
-        <div class="each-input">
-          <a-input placeholder="需要设置为从节点的 port" @change="inputSlotsDelPort" />
-        </div>
-        <div class="each-input">
-          <a-input type="number" placeholder="slots 起（0-16383）" @change="inputSlotsDelStart" />
-        </div>
-        <div class="each-input">
-          <a-input type="number" placeholder="slots 止（0-16383）" @change="inputSlotsDelEnd" />
-        </div>
-        <a-popconfirm @confirm="confirmSlotsDel" :title="'确认进行 slots 删除'">
-          <a-icon slot="icon" type="question-circle-o" style="color: red" />
-          <a-button style="width: 30%;float: left;" class="submit" type="primary">提交</a-button>
-        </a-popconfirm>
-      </a-drawer>-->
       <a-button class="eachHandle" @click="slotsMig" type="primary">slots 迁移</a-button>
       <a-drawer
         title="slots 迁移"
@@ -160,6 +134,7 @@
   </div>
 </template>
 <script>
+import hd from '../../../lib/ws'
 let data = [];
 let t = null;
 let lastTime = new Date().getTime();
@@ -168,34 +143,33 @@ export default {
   data() {
     const that = this;
     this.$socket.sendObj({
-      Func: "/config/redis/clusterNodes",
+      Func: "/redis/clusterNodes",
       Data: JSON.stringify({ id: that.$route.query.id })
     });
-    const handMessage = function(da) {
+    const handMessage = hd(function(d) {
       // 接受服务端数据
-      const d = JSON.parse(da.data);
       let z = [];
-      if (d.Type === "/config/redis/clusterNodes") {
+      if (d.Type === "/redis/clusterNodes") {
         data.push(
           "// 节点信息 <id> <ip:port> <role> <follow-node-id> <ping-sent> <pong-recv> <config-epoch> <link-state> <slots> ..."
         );
       }
-      if (d.Type === "/config/redis/clusterMeet") {
+      if (d.Type === "/redis/clusterMeet") {
         data.push("// 节点添加");
       }
-      if (d.Type === "/config/redis/clusterForget") {
+      if (d.Type === "/redis/clusterForget") {
         data.push("// 节点删除");
       }
-      if (d.Type === "/config/redis/setSlots") {
+      if (d.Type === "/redis/setSlots") {
         data.push("// slots 添加");
       }
-      if (d.Type === "/config/redis/delSlots") {
+      if (d.Type === "/redis/delSlots") {
         data.push("// slots 删除");
       }
-      if (d.Type === "/config/redis/slots/migrating") {
+      if (d.Type === "/redis/slots/migrating") {
         data.push("// slots 迁移");
       }
-      if (d.Type === "/config/redis/slots/migrating/0") {
+      if (d.Type === "/redis/slots/migrating/0") {
         const status = d.Data.split(" ");
         status[0]++;
         status[1]++;
@@ -216,7 +190,7 @@ export default {
         }
         return;
       }
-      if (d.Type === "/config/redis/clusterSlots") {
+      if (d.Type === "/redis/clusterSlots") {
         const max = 16384;
         let availableSlots = [];
         let usedSlots = [];
@@ -283,7 +257,7 @@ export default {
       setTimeout(() => {
         container.scrollTop += 1000;
       }, 100);
-    };
+    })
     this.$socket.onmessage = handMessage;
     t = setInterval(() => {
       if (that.$socket.onmessage !== handMessage) {
@@ -335,7 +309,7 @@ export default {
     },
     confirmSlotsSet() {
       this.$socket.sendObj({
-        Func: "/config/redis/setSlots",
+        Func: "/redis/setSlots",
         Data: JSON.stringify({
           id: this.$route.query.id,
           host: this.slotsHost,
@@ -367,7 +341,7 @@ export default {
     },
     confirmSlotsMig() {
       this.$socket.sendObj({
-        Func: "/config/redis/slots/migrating",
+        Func: "/redis/slots/migrating",
         Data: JSON.stringify({
           id: this.$route.query.id,
           sourceId: this.slotsMigSource,
@@ -381,7 +355,7 @@ export default {
     // slots stats
     slotsStats() {
       this.$socket.sendObj({
-        Func: "/config/redis/clusterSlots",
+        Func: "/redis/clusterSlots",
         Data: JSON.stringify({
           id: this.$route.query.id
         })
@@ -390,7 +364,7 @@ export default {
     // cluster
     confirmClusterReplicate() {
       this.$socket.sendObj({
-        Func: "/config/redis/clusterReplicate",
+        Func: "/redis/clusterReplicate",
         Data: JSON.stringify({
           id: this.$route.query.id,
           host: this.repHost,
@@ -402,7 +376,7 @@ export default {
     },
     confirmClusterForget() {
       this.$socket.sendObj({
-        Func: "/config/redis/clusterForget",
+        Func: "/redis/clusterForget",
         Data: JSON.stringify({
           id: this.$route.query.id,
           nodeid: this.nodeid
@@ -412,7 +386,7 @@ export default {
     },
     confirmAddNode() {
       this.$socket.sendObj({
-        Func: "/config/redis/clusterMeet",
+        Func: "/redis/clusterMeet",
         Data: JSON.stringify({
           id: this.$route.query.id,
           host: this.newhost,
@@ -463,7 +437,7 @@ export default {
     },
     reloadClusterNodes() {
       this.$socket.sendObj({
-        Func: "/config/redis/clusterNodes",
+        Func: "/redis/clusterNodes",
         Data: JSON.stringify({ id: this.$route.query.id })
       });
     }
