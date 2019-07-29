@@ -22,6 +22,7 @@
 <script>
 import hd from "../../lib/ws";
 import Vue from "vue";
+import { token } from "../../lib/token";
 const vm = new Vue();
 let chartData = {};
 let t = null;
@@ -39,7 +40,9 @@ export default {
     vm.$connect(
       "ws://0.0.0.0:8081/v1/websocket?octopusPath=" +
         PATH +
-        "&octopusToken=462426262a462a4a297c726f6f74",
+        "&octopusToken=" +
+        token +
+        "&octopusClusterID=nil",
       { format: "json" }
     );
     this.lineChartSettings = {
@@ -79,23 +82,19 @@ export default {
       }
     };
     const that = this;
-    this.$socket.sendObj({
-      Func: "/redis/detail",
-      Data: JSON.stringify({ id: that.$route.query.id })
-    });
-    this.$socket.sendObj({
-      Func: "/redis/stats",
-      Data: JSON.stringify({ id: that.$route.query.id })
-    });
     t = setInterval(() => {
-      this.$socket.sendObj({
-        Func: "/redis/detail",
-        Data: JSON.stringify({ id: that.$route.query.id })
-      });
-      this.$socket.sendObj({
-        Func: "/redis/stats",
-        Data: JSON.stringify({ id: that.$route.query.id })
-      });
+      try {
+        this.$socket.sendObj({
+          Func: "/redis/detail",
+          Data: JSON.stringify({ id: that.$route.query.id })
+        });
+        this.$socket.sendObj({
+          Func: "/redis/stats",
+          Data: JSON.stringify({ id: that.$route.query.id })
+        });
+      } catch (e) {
+        console.error(e);
+      }
     }, interTime);
     this.$socket.onmessage = hd(d => {
       if (d.Type === "/redis/detail") {

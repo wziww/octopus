@@ -136,6 +136,7 @@
 <script>
 import hd from "../../lib/ws";
 import Vue from "vue";
+import { token } from "../../lib/token";
 const vm = new Vue();
 let data = [];
 let t = null;
@@ -148,7 +149,8 @@ export default {
     vm.$connect(
       "ws://0.0.0.0:8081/v1/websocket?octopusPath=" +
         PATH +
-        "&octopusToken=462426262a462a4a297c726f6f74" +
+        "&octopusToken=" +
+        token +
         "&octopusClusterID=" +
         this.$route.query.id,
       { format: "json" }
