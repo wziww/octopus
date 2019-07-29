@@ -1,7 +1,7 @@
 const CasePage = {
   path: '/',
   name: 'home',
-  component: () => import('@v/index/index.vue'),
+  component: () => import('@v'),
   meta: {
     title: '首页',
     Index: '1'

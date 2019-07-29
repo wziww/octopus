@@ -20,19 +20,28 @@
   </div>
 </template>
 <script>
-import hd from "../../../lib/ws";
+import hd from "../../lib/ws";
+import Vue from "vue";
+const vm = new Vue();
 let chartData = {};
 let t = null;
 let index = ["primary", "default", "default", "default", "default", "default"];
 let timeData = [];
 let statsDataT = [];
 let interTime = 1000;
+const PATH = "dev";
 export default {
   name: "setting_redis",
   data() {
     statsDataT = [];
     chartData = [];
     timeData = [];
+    vm.$connect(
+      "ws://0.0.0.0:8081/v1/websocket?octopusPath=" +
+        PATH +
+        "&octopusToken=462426262a462a4a297c726f6f74",
+      { format: "json" }
+    );
     this.lineChartSettings = {
       area: true,
       scale: [true, true],

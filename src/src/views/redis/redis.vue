@@ -19,15 +19,15 @@
               style="float: left;"
             >{{item.data.Status}}</a-tag>
           </div>
-          <router-link :to="'/setting/clusterSlots?id='+item.name" class="hd">
+          <router-link :to="'/clusterSlots?id='+item.name" class="hd">
             <a-icon type="table" />
             <span>节点</span>
           </router-link>
-          <router-link :to="'/setting/redis_monit_main?id='+item.name" class="hd">
+          <router-link :to="'/redis_monit_main?id='+item.name" class="hd">
             <a-icon type="dashboard" />
             <span>监控</span>
           </router-link>
-          <router-link :to="'/setting/redis_dev?id='+item.name" class="hd">
+          <router-link :to="'/redis_dev?id='+item.name" class="hd">
             <a-icon type="code" />
             <span>dev</span>
           </router-link>
@@ -38,12 +38,23 @@
   </div>
 </template>
 <script>
+import Vue from "vue";
+import hd from "../../lib/ws";
+const vm = new Vue();
 let Data = [];
 let t = null;
+const PATH = "monit";
 export default {
   name: "setting_redis",
   data() {
     Data = [];
+    vm.$connect(
+      "ws://0.0.0.0:8081/v1/websocket?octopusPath=" +
+        PATH +
+        "&octopusToken=462426262a462a4a297c726f6f74"+
+        "&octopusClusterID=nil",
+      { format: "json" }
+    );
     try {
       this.$socket.sendObj({
         Func: "/redis"
@@ -61,12 +72,10 @@ export default {
       }
     }, 1000 * 3);
     const that = this;
-    this.$socket.onmessage = data => {
-      const d = JSON.parse(data.data);
+    this.$socket.onmessage = hd(d => {
       Data = [];
       switch (d.Type) {
         case "/redis": // 配置列表
-          d.Data = JSON.parse(d.Data).message;
           if (Object.keys(d.Data)) {
             for (let i of Object.keys(d.Data)) {
               Data.push({
@@ -78,7 +87,7 @@ export default {
           }
           break;
       }
-    };
+    });
     return {
       form: this.$form.createForm(this),
       visible: false,
@@ -90,15 +99,16 @@ export default {
     if (t !== null) {
       window.clearInterval(t);
     }
+    vm.$disconnect();
   },
   methods: {
     del(id) {
       this.$socket.sendObj({
-        Func: "/config/redis/del",
+        Func: PATH + "/del",
         Data: JSON.stringify({ id })
       });
       this.$socket.sendObj({
-        Func: "/redis"
+        Func: PATH
       });
     }
   }

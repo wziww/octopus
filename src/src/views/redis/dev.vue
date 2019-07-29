@@ -7,7 +7,7 @@
     <div class="handleButton">
       <a-divider orientation="left">通用</a-divider>
       <a-button class="eachHandle" @click="clearOutPut" type="primary">清屏</a-button>
-      <router-link class="eachHandle" :to="'/setting/clusterSlots?id='+$route.query.id">
+      <router-link class="eachHandle" :to="'/clusterSlots?id='+$route.query.id">
         <a-button type="primary">集群列表</a-button>
       </router-link>
       <a-divider orientation="left">节点操作</a-divider>
@@ -134,18 +134,25 @@
   </div>
 </template>
 <script>
-import hd from '../../../lib/ws'
+import hd from "../../lib/ws";
+import Vue from "vue";
+const vm = new Vue();
 let data = [];
 let t = null;
 let lastTime = new Date().getTime();
+const PATH = "dev";
 export default {
   name: "setting_redis",
   data() {
     const that = this;
-    this.$socket.sendObj({
-      Func: "/redis/clusterNodes",
-      Data: JSON.stringify({ id: that.$route.query.id })
-    });
+    vm.$connect(
+      "ws://0.0.0.0:8081/v1/websocket?octopusPath=" +
+        PATH +
+        "&octopusToken=462426262a462a4a297c726f6f74" +
+        "&octopusClusterID=" +
+        this.$route.query.id,
+      { format: "json" }
+    );
     const handMessage = hd(function(d) {
       // 接受服务端数据
       let z = [];
@@ -173,7 +180,17 @@ export default {
         const status = d.Data.split(" ");
         status[0]++;
         status[1]++;
-        let str = "slots 迁移中:\n[";
+        let str = "slots 迁移中:\n";
+        str +=
+          "自 " +
+          status[2] +
+          " 迁移 " +
+          status[4] +
+          " - " +
+          status[5] +
+          " slots 去 " +
+          status[3] +
+          "\n[";
         for (let i = 0; i < (status[1] / status[0]) * 50; i++) {
           str += "*";
         }
@@ -257,7 +274,7 @@ export default {
       setTimeout(() => {
         container.scrollTop += 1000;
       }, 100);
-    })
+    });
     this.$socket.onmessage = handMessage;
     t = setInterval(() => {
       if (that.$socket.onmessage !== handMessage) {
@@ -448,6 +465,7 @@ export default {
     if (t !== null) {
       window.clearInterval(t);
     }
+    vm.$disconnect();
   }
 };
 </script>

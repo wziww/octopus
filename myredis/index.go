@@ -650,7 +650,8 @@ func ClusterSlotsMigrating(id, sourceID, targetID string, slotsStart,
 					}
 					wg.Wait()
 				}
-				fn(strconv.FormatInt(slotsEnd-slotsStart, 10)+" "+strconv.FormatInt(i-slotsStart, 10), 0)
+				fn(strconv.FormatInt(slotsEnd-slotsStart, 10)+" "+strconv.FormatInt(i-slotsStart, 10)+" "+sourceID+" "+targetID+" "+
+					strconv.FormatInt(slotsStart, 10)+" "+strconv.FormatInt(slotsEnd, 10), 0)
 			}
 		}
 	default:

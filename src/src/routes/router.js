@@ -6,7 +6,6 @@ import { SettingPage, RedisPage, RedisMonit, RedisMonitMain, RedisDev } from './
 export default [
   {
     path: '/',
-    alias: '',
     component: common,
     children: [
       CasePage,

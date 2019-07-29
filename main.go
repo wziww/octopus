@@ -34,7 +34,7 @@ func (p *program) Start() error {
 			ReadTimeout:  5 * time.Second,
 		}
 		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-			if r.RequestURI == "/v1/websocket" {
+			if r.URL.Path == "/v1/websocket" {
 				ws(w, r)
 				return
 			}

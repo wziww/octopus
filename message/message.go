@@ -7,6 +7,7 @@ var messageMap map[int64]string
 func init() {
 	messageMap = map[int64]string{
 		404001: "非集群模式不可操作",
+		404002: "非法操作",
 	}
 }
 

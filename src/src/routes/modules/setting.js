@@ -1,47 +1,47 @@
 const RedisDev = {
-  path: '/setting/redis_dev',
+  path: '/redis_dev',
   name: 'setting_redis_dev',
-  component: () => import('@v/setting/redis/dev.vue'),
+  component: () => import('@v/redis/dev.vue'),
   meta: {
     title: '数据源-运维模式',
     Index: '3'
   }
 };
 const RedisMonit = {
-  path: '/setting/clusterSlots',
+  path: '/clusterSlots',
   name: 'setting_redis_monit',
-  component: () => import('@v/setting/redis/clusterSlots.vue'),
+  component: () => import('@v/redis/clusterSlots.vue'),
   meta: {
     title: '数据源-节点列表',
     Index: '3'
   }
 };
 const RedisMonitMain = {
-  path: '/setting/redis_monit_main',
+  path: '/redis_monit_main',
   name: 'setting_redis_monit_main',
-  component: () => import('@v/setting/redis/monit_main.vue'),
+  component: () => import('@v/redis/monit_main.vue'),
   meta: {
     title: '数据源-实时监控',
-    Index: '3'
+    Index: '1'
   }
 };
 const RedisPage = {
-  path: '/setting/redis',
+  path: '/redis',
   name: 'setting_redis',
-  component: () => import('@v/setting/redis/redis.vue'),
+  component: () => import('@v/redis/redis.vue'),
   meta: {
     title: '数据源-redis-列表',
-    Index: '3'
+    Index: '1'
   }
   // children: [RedisList]
 };
 const SettingPage = {
-  path: '/setting',
+  path: '',
   name: 'setting',
-  component: () => import('@v/setting/index.vue'),
+  component: () => import('@v/index.vue'),
   meta: {
     title: '数据源',
-    Index: '3'
+    Index: '1'
   }
 };
 export {

@@ -14,9 +14,11 @@ var C *Config
 
 // Config 配置
 type Config struct {
-	Server *Server       `toml:"server"`
-	Redis  []RedisDetail `toml:"redis"`
-	Log    *Log
+	Server     *Server       `toml:"server"`
+	Redis      []RedisDetail `toml:"redis"`
+	Log        *Log
+	Auth       []Auth     `toml:"auth"`
+	AuthConfig AuthConfig `toml:"auth-config"`
 }
 
 // Log 日志配置
@@ -36,6 +38,18 @@ type RedisDetail struct {
 	Name    string   `toml:"name"`
 	Address []string `toml:"address"`
 	DB      int      `toml:"db"`
+}
+
+// Auth ...
+type Auth struct {
+	User       string   `toml:"user"`
+	Password   string   `toml:"password"`
+	Permission []string `toml:"permission"`
+}
+
+// AuthConfig ...
+type AuthConfig struct {
+	Key string `toml:"key"`
 }
 
 func init() {

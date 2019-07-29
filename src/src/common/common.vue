@@ -11,12 +11,6 @@
       <a-menu theme="dark" mode="inline" :defaultSelectedKeys="[$route.meta.Index]">
         <a-menu-item key="1">
           <router-link to="/">
-            <a-icon type="home"/>
-            <span>首页</span>
-          </router-link>
-        </a-menu-item>
-        <a-menu-item key="3">
-          <router-link to="/setting">
             <a-icon type="cloud-o"/>
             <span>数据源</span>
           </router-link>

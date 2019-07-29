@@ -10,7 +10,7 @@
     </a-tooltip>
     <router-link
       style="float: left;margin-left: 10px;"
-      :to="'/setting/redis_dev?id='+$route.query.id"
+      :to="'/redis_dev?id='+$route.query.id"
       class="hd"
     >
       <a-button type="danger">dev</a-button>
@@ -147,13 +147,16 @@
   </div>
 </template>
 <script>
-import hd from "../../../lib/ws";
+import hd from "../../lib/ws";
+import Vue from "vue";
+const vm = new Vue();
 let data = [];
 let type = "cluster";
 let interTime = 1000;
 let t = null;
 let t2 = null;
 let index = ["primary", "default", "default", "default", "default", "default"];
+const PATH = "monit";
 export default {
   name: "setting_redis",
   data() {
@@ -162,11 +165,23 @@ export default {
     let usedmemoryWarning = "none";
     let reShardingSlots = "none";
     const that = this;
+    vm.$connect(
+      "ws://0.0.0.0:8081/v1/websocket?octopusPath=" +
+        PATH +
+        "&octopusToken=462426262a462a4a297c726f6f74"+
+        "&octopusClusterID=" +
+        this.$route.query.id,
+      { format: "json" }
+    );
     t = setInterval(() => {
-      this.$socket.sendObj({
-        Func: "/redis/detail",
-        Data: JSON.stringify({ id: that.$route.query.id })
-      });
+      try {
+        this.$socket.sendObj({
+          Func: "/redis/detail",
+          Data: JSON.stringify({ id: that.$route.query.id })
+        });
+      } catch (e) {
+        console.error(e);
+      }
     }, interTime);
     const handMessage = hd(d => {
       if (d.Type === "/redis/detail") {

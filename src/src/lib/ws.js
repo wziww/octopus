@@ -8,12 +8,16 @@ const hd = (fn) => {
       if (('' + d.Data.code).startsWith('403')) { // unauth
         return message.error(d.Data.message);
       }
+      if (('' + d.Data.code).startsWith('404')) { // unauth
+        return message.error(d.Data.message);
+      }
       if (d.Data.code !== 200) {
         return message.error(d.Data.message);
       }
       d.Data = d.Data.message;
       fn(d);
     } catch (e) {
+      console.error(e);
       message.error("sys error");
     }
   };

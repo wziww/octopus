@@ -17,7 +17,10 @@ Vue.use(VCharts);
 Vue.use(VueHighlightJS);
 Vue.use(moment);
 Vue.use(VueNativeSock, 'ws://0.0.0.0:8081/v1/websocket', {
-  format: 'json', reconnection: true, reconnectionDelay: 3000
+  connectManually: true,
+  format: 'json',
+  reconnection: true,
+  reconnectionDelay: 3000
 });
 Vue.config.productionTip = false;
 Vue.use(Antd);

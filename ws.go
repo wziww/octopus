@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"octopus/message"
 	"octopus/myredis"
+	"octopus/permission"
 	"sync"
 
 	"github.com/google/uuid"
@@ -18,50 +19,6 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		return true
 	},
-}
-var (
-	sendLock sync.Mutex
-)
-
-// SafeWrite ws safe write
-func SafeWrite(c *websocket.Conn, result []byte, messageType ...int) error {
-	sendLock.Lock()
-	defer sendLock.Unlock()
-	mt := websocket.TextMessage
-	if len(messageType) > 0 {
-		mt = messageType[0]
-	}
-	err := c.WriteMessage(mt, result)
-	return err
-}
-
-func ws(w http.ResponseWriter, r *http.Request) {
-	c, err := upgrader.Upgrade(w, r, nil)
-	connID := fmt.Sprintf("%x", md5.Sum([]byte(uuid.New().String())))
-	if err != nil {
-		log.Print("upgrade:", err)
-		return
-	}
-	defer c.Close()
-	for {
-		mt, message, err := c.ReadMessage()
-		if err != nil {
-			e := err.(*websocket.CloseError)
-			if e.Code == websocket.CloseGoingAway { // conn close
-			}
-			break
-		}
-		go func() {
-			result := handle(message, connID, c)
-			if result != nil && len(result) > 0 {
-				SafeWrite(c, result, mt)
-				if err != nil {
-					log.Println("write:", err)
-				}
-			}
-		}()
-	}
-	return
 }
 
 type socketReturn struct {
@@ -81,17 +38,78 @@ type newConfig struct {
 type router func(data string, conns ...*websocket.Conn) []byte
 
 var routerAll map[string]router
+var userConnGroup *_userConnGroup
 
-func handle(message []byte, connID string, c *websocket.Conn) []byte {
-	b := &socketRecv{}
-	json.Unmarshal(message, b)
-	routerPath := b.Func
-	if routerAll[routerPath] != nil {
-		return routerAll[routerPath](b.Data, c)
+type _userConnGroup struct {
+	conns []*userConns
+	lock  sync.RWMutex
+}
+type userConns struct {
+	user  *permission.User
+	conns []*userConnType
+}
+
+type userConnType struct {
+	conn      *websocket.Conn
+	path      string
+	clusterID string
+	id        string
+}
+
+func (c *_userConnGroup) checkSet(token string, conn *websocket.Conn, path, id, clusterID string) bool {
+	if path != "dev" && path != "monit" && path != "exec" || clusterID == "" {
+		return false
 	}
-	return []byte("404")
+	c.lock.Lock()
+	defer c.lock.Unlock()
+	for _, v := range c.conns {
+		if v.user.Token == token {
+			if len(v.conns) > 100 {
+				return false
+			}
+			for _, vv := range v.conns {
+				if vv.id == id { // Duplicate id
+					return false
+				}
+			}
+			v.conns = append(v.conns, &userConnType{
+				conn:      conn,
+				path:      path,
+				id:        id,
+				clusterID: clusterID,
+			})
+			return true
+		}
+	}
+	c.conns = append(c.conns, &userConns{
+		user: permission.Get(token),
+		conns: []*userConnType{&userConnType{
+			path:      path,
+			conn:      conn,
+			id:        id,
+			clusterID: clusterID,
+		}},
+	})
+	return true
+}
+func (c *_userConnGroup) checkDel(token string, path string, id string) bool {
+	for _, v := range c.conns {
+		if v.user.Token == token {
+			for i, v2 := range v.conns {
+				if v2.path == path && v2.id == id {
+					c.lock.Lock()
+					v.conns = append(v.conns[:i], v.conns[i+1:]...)
+					c.lock.Unlock()
+					break
+				}
+			}
+		}
+	}
+	return false
 }
 func init() {
+	userConnGroup = &_userConnGroup{}
+	userConnGroup.conns = make([]*userConns, 0)
 	routerAll = make(map[string]router)
 	Router("/redis", func(data string, conns ...*websocket.Conn) []byte {
 		bytes, _ := json.Marshal(&socketReturn{
@@ -121,8 +139,20 @@ func init() {
 					Type: t,
 					Data: message.Res(200, str),
 				})
-				go SafeWrite(conns[0],
-					bts)
+				PATH := "dev"
+				go func() {
+					userConnGroup.lock.RLock()
+					defer userConnGroup.lock.RUnlock()
+					for _, v := range userConnGroup.conns {
+						if (v.user.Permission & permission.PERMISSIONDEV) > 0 {
+							for _, v2 := range v.conns {
+								if v2.path == PATH && v2.clusterID == body.ID {
+									SafeWrite(v2.conn, bts, websocket.TextMessage)
+								}
+							}
+						}
+					}
+				}()
 			}
 		})
 		return []byte{}
@@ -238,6 +268,97 @@ func init() {
 		})
 		return bytes
 	})
+}
+
+var (
+	sendLock sync.Mutex
+)
+
+// SafeWrite ws safe write
+func SafeWrite(c *websocket.Conn, result []byte, messageType ...int) error {
+	sendLock.Lock()
+	defer sendLock.Unlock()
+	mt := websocket.TextMessage
+	if len(messageType) > 0 {
+		mt = messageType[0]
+	}
+	err := c.WriteMessage(mt, result)
+	return err
+}
+
+func ws(w http.ResponseWriter, r *http.Request) {
+	var c *websocket.Conn
+	var err error
+	params := r.URL.Query()
+	tokens := params["octopusToken"]
+	var token string
+	if len(tokens) > 0 {
+		token = tokens[0]
+	}
+	var path, clusterID string
+	p := params["octopusPath"]
+	if len(p) > 0 {
+		path = p[0]
+	}
+	oc := params["octopusClusterID"]
+	if len(oc) > 0 {
+		clusterID = oc[0]
+	}
+	connID := fmt.Sprintf("%x", md5.Sum([]byte(uuid.New().String())))
+	if token != "" {
+		u := permission.Get(token)
+		if u != nil {
+			c, err = upgrader.Upgrade(w, r, nil)
+			if userConnGroup.checkSet(token, c, path, connID, clusterID) {
+			} else {
+				bytes, _ := json.Marshal(&socketReturn{
+					Type: "",
+					Data: message.Res(404002, "error"),
+				})
+				SafeWrite(c, bytes, websocket.TextMessage)
+				return
+			}
+		} else {
+			return
+		}
+	} else {
+		return
+	}
+	if err != nil {
+		log.Print("upgrade:", err)
+		return
+	}
+	defer c.Close()
+	for {
+		mt, message, err := c.ReadMessage()
+		if err != nil {
+			userConnGroup.checkDel(token, path, connID)
+			e := err.(*websocket.CloseError)
+			if e.Code == websocket.CloseGoingAway { // conn close
+			}
+			break
+		}
+		go func() {
+			result := handle(message, connID, c)
+			if result != nil && len(result) > 0 {
+				SafeWrite(c, result, mt)
+				if err != nil {
+					log.Println("write:", err)
+				}
+			}
+		}()
+	}
+	return
+}
+
+func handle(message []byte, connID string, c *websocket.Conn) []byte {
+	b := &socketRecv{}
+	json.Unmarshal(message, b)
+	routerPath := b.Func
+	if routerAll[routerPath] != nil {
+		return routerAll[routerPath](b.Data, c)
+	}
+	return []byte("404")
 }
 
 // Router ...
