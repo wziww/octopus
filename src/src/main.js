@@ -2,8 +2,6 @@ import Vue from 'vue';
 import App from './App.vue';
 import router from './routes';
 import VCharts from 'v-charts';
-// import './registerServiceWorker';
-// import plugins from './plugins';
 import Antd from 'ant-design-vue';
 import 'ant-design-vue/dist/antd.css';
 import 'highlight.js/styles/a11y-dark.css';

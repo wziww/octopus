@@ -33,7 +33,6 @@ const RedisPage = {
     title: '数据源-redis-列表',
     Index: '1'
   }
-  // children: [RedisList]
 };
 const SettingPage = {
   path: '',

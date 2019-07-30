@@ -21,9 +21,8 @@
 </template>
 <script>
 import hd from "../../lib/ws";
-import Vue from "vue";
 import { token } from "../../lib/token";
-const vm = new Vue();
+import WS from "../../lib/websocket";
 let chartData = {};
 let t = null;
 let index = ["primary", "default", "default", "default", "default", "default"];
@@ -31,20 +30,20 @@ let timeData = [];
 let statsDataT = [];
 let interTime = 1000;
 const PATH = "dev";
+const ws = new WS(
+  "ws://0.0.0.0:8081/v1/websocket?octopusPath=" +
+    PATH +
+    "&octopusToken=" +
+    token +
+    "&octopusClusterID=nil"
+);
 export default {
   name: "setting_redis",
   data() {
     statsDataT = [];
     chartData = [];
     timeData = [];
-    vm.$connect(
-      "ws://0.0.0.0:8081/v1/websocket?octopusPath=" +
-        PATH +
-        "&octopusToken=" +
-        token +
-        "&octopusClusterID=nil",
-      { format: "json" }
-    );
+    ws.Open();
     this.lineChartSettings = {
       area: true,
       scale: [true, true],
@@ -84,11 +83,11 @@ export default {
     const that = this;
     t = setInterval(() => {
       try {
-        this.$socket.sendObj({
+        ws.SendObj({
           Func: "/redis/detail",
           Data: JSON.stringify({ id: that.$route.query.id })
         });
-        this.$socket.sendObj({
+        ws.SendObj({
           Func: "/redis/stats",
           Data: JSON.stringify({ id: that.$route.query.id })
         });
@@ -96,54 +95,57 @@ export default {
         console.error(e);
       }
     }, interTime);
-    this.$socket.onmessage = hd(d => {
-      if (d.Type === "/redis/detail") {
-        let UsedMemoryTotal = 0;
-        // let TotalSystemMemoryTotal = 0;
-        let Maxmemory = 0;
-        for (let i of d.Data) {
-          UsedMemoryTotal += Number(i.UsedMemory);
-          // TotalSystemMemoryTotal += Number(i.TotalSystemMemory);
-          Maxmemory += Number(i.Maxmemory);
+    ws.Close();
+    ws.OnData(
+      hd(d => {
+        if (d.Type === "/redis/detail") {
+          let UsedMemoryTotal = 0;
+          // let TotalSystemMemoryTotal = 0;
+          let Maxmemory = 0;
+          for (let i of d.Data) {
+            UsedMemoryTotal += Number(i.UsedMemory);
+            // TotalSystemMemoryTotal += Number(i.TotalSystemMemory);
+            Maxmemory += Number(i.Maxmemory);
+          }
+          if (timeData.length >= 20) {
+            timeData.shift();
+          }
+          timeData.push({
+            t: that.$moment().format("hh:mm:ss"),
+            memory_total: (UsedMemoryTotal / 1024 / 1024).toFixed(2)
+          });
+          chartData = {
+            columns: ["key", "percent"],
+            rows: [
+              {
+                key: "内存使用量",
+                percent: (UsedMemoryTotal / Maxmemory).toFixed(4)
+              }
+            ]
+          };
+          that.chartData = chartData;
         }
-        if (timeData.length >= 20) {
-          timeData.shift();
+        if (d.Type === "/redis/stats") {
+          let InstantaneousInputKbps = 0;
+          let InstantaneousOutputKbps = 0;
+          let InstantaneousOpsPerSec = 0;
+          for (let i of d.Data) {
+            InstantaneousOutputKbps += Number(i.InstantaneousOutputKbps);
+            InstantaneousInputKbps += Number(i.InstantaneousInputKbps);
+            InstantaneousOpsPerSec += Number(i.InstantaneousOpsPerSec);
+          }
+          if (statsDataT.length >= 20) {
+            statsDataT.shift();
+          }
+          statsDataT.push({
+            t: that.$moment().format("hh:mm:ss"),
+            output_Kbps: InstantaneousOutputKbps,
+            input_Kbps: InstantaneousInputKbps,
+            Ops: InstantaneousOpsPerSec
+          });
         }
-        timeData.push({
-          t: that.$moment().format("hh:mm:ss"),
-          memory_total: (UsedMemoryTotal / 1024 / 1024).toFixed(2)
-        });
-        chartData = {
-          columns: ["key", "percent"],
-          rows: [
-            {
-              key: "内存使用量",
-              percent: (UsedMemoryTotal / Maxmemory).toFixed(4)
-            }
-          ]
-        };
-        that.chartData = chartData;
-      }
-      if (d.Type === "/redis/stats") {
-        let InstantaneousInputKbps = 0;
-        let InstantaneousOutputKbps = 0;
-        let InstantaneousOpsPerSec = 0;
-        for (let i of d.Data) {
-          InstantaneousOutputKbps += Number(i.InstantaneousOutputKbps);
-          InstantaneousInputKbps += Number(i.InstantaneousInputKbps);
-          InstantaneousOpsPerSec += Number(i.InstantaneousOpsPerSec);
-        }
-        if (statsDataT.length >= 20) {
-          statsDataT.shift();
-        }
-        statsDataT.push({
-          t: that.$moment().format("hh:mm:ss"),
-          output_Kbps: InstantaneousOutputKbps,
-          input_Kbps: InstantaneousInputKbps,
-          Ops: InstantaneousOpsPerSec
-        });
-      }
-    });
+      })
+    );
 
     return {
       chartData,

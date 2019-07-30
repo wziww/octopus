@@ -138,20 +138,21 @@ import hd from "../../lib/ws";
 import { token } from "../../lib/token";
 import WS from "../../lib/websocket";
 const PATH = "dev";
-const ws = new WS(
-  "ws://0.0.0.0:8081/v1/websocket?octopusPath=" +
-    PATH +
-    "&octopusToken=" +
-    token +
-    "&octopusClusterID=" +
-    this.$route.query.id
-);
+let ws = null;
 let data = [];
 let t = null;
 let lastTime = new Date().getTime();
 export default {
   name: "setting_redis",
   data() {
+    ws = new WS(
+      "ws://0.0.0.0:8081/v1/websocket?octopusPath=" +
+        PATH +
+        "&octopusToken=" +
+        token +
+        "&octopusClusterID=" +
+        this.$route.query.id
+    );
     const that = this;
     const handMessage = hd(function(d) {
       // 接受服务端数据
@@ -275,7 +276,9 @@ export default {
         container.scrollTop += 1000;
       }, 100);
     });
+    ws.Open();
     ws.OnData(handMessage);
+    ws.Close();
     return {
       data,
       clusterMeetShow: false,
@@ -320,7 +323,7 @@ export default {
       this.slotsEnd = e.target.value;
     },
     confirmSlotsSet() {
-      this.$socket.sendObj({
+      ws.SendObj({
         Func: "/redis/setSlots",
         Data: JSON.stringify({
           id: this.$route.query.id,
@@ -352,7 +355,7 @@ export default {
       this.slotsMigEnd = e.target.value;
     },
     confirmSlotsMig() {
-      this.$socket.sendObj({
+      ws.SendObj({
         Func: "/redis/slots/migrating",
         Data: JSON.stringify({
           id: this.$route.query.id,
@@ -366,7 +369,7 @@ export default {
     },
     // slots stats
     slotsStats() {
-      this.$socket.sendObj({
+      ws.SendObj({
         Func: "/redis/clusterSlots",
         Data: JSON.stringify({
           id: this.$route.query.id
@@ -375,7 +378,7 @@ export default {
     },
     // cluster
     confirmClusterReplicate() {
-      this.$socket.sendObj({
+      ws.SendObj({
         Func: "/redis/clusterReplicate",
         Data: JSON.stringify({
           id: this.$route.query.id,
@@ -387,7 +390,7 @@ export default {
       this.clusterReplicateShow = false;
     },
     confirmClusterForget() {
-      this.$socket.sendObj({
+      ws.SendObj({
         Func: "/redis/clusterForget",
         Data: JSON.stringify({
           id: this.$route.query.id,
@@ -397,7 +400,7 @@ export default {
       this.clusterForgetShow = false;
     },
     confirmAddNode() {
-      this.$socket.sendObj({
+      ws.SendObj({
         Func: "/redis/clusterMeet",
         Data: JSON.stringify({
           id: this.$route.query.id,
@@ -448,7 +451,7 @@ export default {
       this.data = "";
     },
     reloadClusterNodes() {
-      this.$socket.sendObj({
+      ws.SendObj({
         Func: "/redis/clusterNodes",
         Data: JSON.stringify({ id: this.$route.query.id })
       });
