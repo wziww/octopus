@@ -15,23 +15,9 @@
             <span>数据源</span>
           </router-link>
         </a-menu-item>
-        <a-menu-item key="4">
-          <router-link to="/system">
-            <a-icon type="setting"/>
-            <span>配置</span>
-          </router-link>
-        </a-menu-item>
       </a-menu>
     </a-layout-sider>
     <a-layout style="box-sizing: border-box;" :style="{ marginLeft: '200px',minHeight:'100vh' }">
-      <!-- <a-layout-header :style="{ background: '#fff', padding: 0}"> -->
-      <!-- <a-icon
-          class="trigger"
-          :type="collapsed ? 'menu-unfold' : 'menu-fold'"
-          @click="()=> collapsed = !collapsed"
-          :style="{float: 'left'}"
-      />-->
-      <!-- </a-layout-header> -->
       <a-layout-content :style="{ margin: '24px 16px 0'}">
         <div :style="{ padding: '24px'}">
           <router-view></router-view>

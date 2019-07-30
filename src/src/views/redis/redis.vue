@@ -38,57 +38,60 @@
   </div>
 </template>
 <script>
-import Vue from "vue";
 import hd from "../../lib/ws";
+import WS from "../../lib/websocket";
 import { token } from "../../lib/token";
-const vm = new Vue();
+const PATH = "monit";
+const ws = new WS(
+  "ws://0.0.0.0:8081/v1/websocket?octopusPath=" +
+    PATH +
+    "&octopusToken=" +
+    token +
+    "&octopusClusterID=nil"
+);
 let Data = [];
 let t = null;
-const PATH = "monit";
 export default {
   name: "setting_redis",
   data() {
     Data = [];
-    vm.$connect(
-      "ws://0.0.0.0:8081/v1/websocket?octopusPath=" +
-        PATH +
-        "&octopusToken=" +
-        token +
-        "&octopusClusterID=nil",
-      { format: "json" }
+    ws.Open();
+    const that = this;
+    ws.OnData(
+      hd(d => {
+        Data = [];
+        switch (d.Type) {
+          case "/redis": // 配置列表
+            if (Object.keys(d.Data)) {
+              for (let i of Object.keys(d.Data)) {
+                Data.push({
+                  name: i,
+                  data: d.Data[i]
+                });
+              }
+              that.Data = Data;
+            }
+            break;
+        }
+      })
     );
-    try {
-      this.$socket.sendObj({
-        Func: "/redis"
-      });
-    } catch (error) {
-      console.error(error);
-    }
-    t = setInterval(() => {
+    ws.OnOpen(() => {
       try {
-        this.$socket.sendObj({
+        ws.SendObj({
           Func: "/redis"
         });
       } catch (error) {
         console.error(error);
       }
-    }, 1000 * 3);
-    const that = this;
-    this.$socket.onmessage = hd(d => {
-      Data = [];
-      switch (d.Type) {
-        case "/redis": // 配置列表
-          if (Object.keys(d.Data)) {
-            for (let i of Object.keys(d.Data)) {
-              Data.push({
-                name: i,
-                data: d.Data[i]
-              });
-            }
-            that.Data = Data;
-          }
-          break;
-      }
+      t = setInterval(() => {
+        try {
+          ws.SendObj({
+            Func: "/redis"
+          });
+        } catch (error) {
+          console.error(error);
+        }
+      }, 1000 * 3);
     });
     return {
       form: this.$form.createForm(this),
@@ -97,22 +100,13 @@ export default {
     };
   },
   beforeDestroy() {
+    ws.Close();
     this.Data = [];
     if (t !== null) {
       window.clearInterval(t);
     }
-    vm.$disconnect();
   },
   methods: {
-    del(id) {
-      this.$socket.sendObj({
-        Func: PATH + "/del",
-        Data: JSON.stringify({ id })
-      });
-      this.$socket.sendObj({
-        Func: PATH
-      });
-    }
   }
 };
 </script>

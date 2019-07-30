@@ -148,16 +148,22 @@
 </template>
 <script>
 import hd from "../../lib/ws";
-import Vue from "vue";
+import WS from "../../lib/websocket";
 import { token } from "../../lib/token";
-const vm = new Vue();
+const PATH = "monit";
+const ws = new WS(
+  "ws://0.0.0.0:8081/v1/websocket?octopusPath=" +
+    PATH +
+    "&octopusToken=" +
+    token +
+    "&octopusClusterID=nil"
+);
 let data = [];
 let type = "cluster";
 let interTime = 1000;
 let t = null;
 let t2 = null;
 let index = ["primary", "default", "default", "default", "default", "default"];
-const PATH = "monit";
 export default {
   name: "setting_redis",
   data() {
@@ -166,25 +172,19 @@ export default {
     let usedmemoryWarning = "none";
     let reShardingSlots = "none";
     const that = this;
-    vm.$connect(
-      "ws://0.0.0.0:8081/v1/websocket?octopusPath=" +
-        PATH +
-        "&octopusToken=" +
-        token +
-        "&octopusClusterID=" +
-        this.$route.query.id,
-      { format: "json" }
-    );
-    t = setInterval(() => {
-      try {
-        this.$socket.sendObj({
-          Func: "/redis/detail",
-          Data: JSON.stringify({ id: that.$route.query.id })
-        });
-      } catch (e) {
-        console.error(e);
-      }
-    }, interTime);
+    ws.Open();
+    ws.OnOpen(() => {
+      t = setInterval(() => {
+        try {
+          ws.SendObj({
+            Func: "/redis/detail",
+            Data: JSON.stringify({ id: that.$route.query.id })
+          });
+        } catch (e) {
+          console.error(e);
+        }
+      }, interTime);
+    });
     const handMessage = hd(d => {
       if (d.Type === "/redis/detail") {
         that.maxmemoryWarning = [];
@@ -274,12 +274,7 @@ export default {
         that.data = data;
       }
     });
-    this.$socket.onmessage = handMessage;
-    t2 = setInterval(() => {
-      if (that.$socket.onmessage !== handMessage) {
-        that.$socket.onmessage = handMessage;
-      }
-    }, 1000);
+    ws.OnData(handMessage);
     return {
       data,
       index,
@@ -385,6 +380,7 @@ export default {
     }
   },
   beforeDestroy() {
+    ws.Close();
     if (t !== null) {
       window.clearInterval(t);
     }

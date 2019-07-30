@@ -23,8 +23,6 @@ module.exports = {
     config
       .resolve.alias
       .set('@', pathResolve('src')) // key,value自行定义，比如.set('@@', pathResolve('src/components'))
-      .set('@a', pathResolve('src/assets')) // key,value自行定义，比如.set('@@', pathResolve('src/components'))
-      .set('@s', pathResolve('src/store'))
       .set('@v', pathResolve('src/views'))
       .set('@l', pathResolve('src/lib'))
       .set('@c', pathResolve('src/components/common'))

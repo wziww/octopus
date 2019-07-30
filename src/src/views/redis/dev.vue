@@ -135,26 +135,24 @@
 </template>
 <script>
 import hd from "../../lib/ws";
-import Vue from "vue";
 import { token } from "../../lib/token";
-const vm = new Vue();
+import WS from "../../lib/websocket";
+const PATH = "dev";
+const ws = new WS(
+  "ws://0.0.0.0:8081/v1/websocket?octopusPath=" +
+    PATH +
+    "&octopusToken=" +
+    token +
+    "&octopusClusterID=" +
+    this.$route.query.id
+);
 let data = [];
 let t = null;
 let lastTime = new Date().getTime();
-const PATH = "dev";
 export default {
   name: "setting_redis",
   data() {
     const that = this;
-    vm.$connect(
-      "ws://0.0.0.0:8081/v1/websocket?octopusPath=" +
-        PATH +
-        "&octopusToken=" +
-        token +
-        "&octopusClusterID=" +
-        this.$route.query.id,
-      { format: "json" }
-    );
     const handMessage = hd(function(d) {
       // 接受服务端数据
       let z = [];
@@ -277,12 +275,7 @@ export default {
         container.scrollTop += 1000;
       }, 100);
     });
-    this.$socket.onmessage = handMessage;
-    t = setInterval(() => {
-      if (that.$socket.onmessage !== handMessage) {
-        that.$socket.onmessage = handMessage;
-      }
-    }, 1000);
+    ws.OnData(handMessage);
     return {
       data,
       clusterMeetShow: false,
@@ -467,7 +460,7 @@ export default {
     if (t !== null) {
       window.clearInterval(t);
     }
-    vm.$disconnect();
+    ws.Close();
   }
 };
 </script>
