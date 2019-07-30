@@ -25,6 +25,7 @@ class WS {
     this.$socket = new WebSocket(this.$url);
     this.$socketStatus = CONNECTED;
     this.$socket.onclose = this._initOnClose();
+    this.$socket.onopen = this._initOnOpen();
     this.$socket.onerror = this._initOnError();
     this.$socket.onmessage = this._initOnMessage();
   }
@@ -33,15 +34,12 @@ class WS {
     this.$socket.close();
   }
   OnClose(fn) {
-    if (!this.$socket) return;
     this.$onclose.push(fn);
   }
   OnOpen(fn) {
-    if (!this.$socket) return;
     this.$onopen.push(fn);
   }
   OnData(fn) {
-    if (!this.$socket) return;
     this.$onmessage.push(fn);
   }
   OnError(fn) {
@@ -63,6 +61,17 @@ class WS {
       for (let i = 0; i < that.$onclose.length; i++) {
         if (typeof that.$onclose[i] === 'function') {
           that.$onclose[i]();
+        }
+      }
+    };
+  }
+  _initOnOpen() {
+    this.$socketStatus = CONNECTED;
+    const that = this;
+    return () => {
+      for (let i = 0; i < that.$onopen.length; i++) {
+        if (typeof that.$onopen[i] === 'function') {
+          that.$onopen[i]();
         }
       }
     };

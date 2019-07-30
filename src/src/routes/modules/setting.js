@@ -4,7 +4,7 @@ const RedisDev = {
   component: () => import('@v/redis/dev.vue'),
   meta: {
     title: '数据源-运维模式',
-    Index: '3'
+    Index: '1'
   }
 };
 const RedisMonit = {
@@ -13,7 +13,7 @@ const RedisMonit = {
   component: () => import('@v/redis/clusterSlots.vue'),
   meta: {
     title: '数据源-节点列表',
-    Index: '3'
+    Index: '1'
   }
 };
 const RedisMonitMain = {
