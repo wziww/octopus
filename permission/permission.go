@@ -6,6 +6,8 @@ import (
 )
 
 var (
+	// PERMISSIONNONE 空权限
+	PERMISSIONNONE = 0
 	// PERMISSIONMONIT 查看监控界面
 	PERMISSIONMONIT = 1 << 0
 	// PERMISSIONDEV dev 运维模式

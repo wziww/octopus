@@ -26,7 +26,7 @@ func Router(path string, mode int, r routerExec) {
 }
 func init() {
 	routerAll = make(map[string]*router)
-	Router("token", 0, func(data string, conns ...*oSocket) string {
+	Router("token", permission.PERMISSIONNONE, func(data string, conns ...*oSocket) string {
 		body := &struct {
 			Token string `json:"token"`
 		}{}
@@ -34,7 +34,7 @@ func init() {
 		conns[0].user = permission.Get(body.Token)
 		return message.Res(200, "success")
 	})
-	Router("namespace", 0, func(data string, conns ...*oSocket) string {
+	Router("namespace", permission.PERMISSIONNONE, func(data string, conns ...*oSocket) string {
 		body := &struct {
 			Namespace string `json:"namespace"`
 		}{}
@@ -42,7 +42,7 @@ func init() {
 		conns[0].namespace = body.Namespace
 		return message.Res(200, "success")
 	})
-	Router("/login", 0, func(data string, conns ...*oSocket) string {
+	Router("/login", permission.PERMISSIONNONE, func(data string, conns ...*oSocket) string {
 		body := &struct {
 			Username string `json:"username"`
 			Password string `json:"password"`
