@@ -6,7 +6,7 @@
           <!-- <div class="each">
             <span style="float: left;">名称:</span>
             <a-tag class="a-tag" color="blue">{{item.data.Name}}</a-tag>
-          </div> -->
+          </div>-->
           <div class="each">
             <span style="float: left;">模式:</span>
             <a-tag class="a-tag" color="blue">{{item.data.Type}}</a-tag>
@@ -53,10 +53,9 @@
 import hd from "../../lib/ws";
 import WS from "../../lib/websocket";
 import { token, permission, permissionAll } from "../../lib/token";
+import config from "../../config/index";
 const PATH = "monit";
-const ws = new WS(
-  "ws://0.0.0.0:8081/v1/websocket?op=" + PATH + "&ot=" + token + "&ocid=nil"
-);
+const ws = new WS(config.Host + "?op=" + PATH + "&ot=" + token + "&ocid=nil");
 let Data = [];
 let t = null;
 export default {

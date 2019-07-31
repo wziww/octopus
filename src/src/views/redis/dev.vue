@@ -137,6 +137,7 @@
 import hd from "../../lib/ws";
 import { token } from "../../lib/token";
 import WS from "../../lib/websocket";
+import config from "../../config/index";
 const PATH = "dev";
 let ws = null;
 let data = [];
@@ -146,7 +147,8 @@ export default {
   name: "setting_redis",
   data() {
     ws = new WS(
-      "ws://0.0.0.0:8081/v1/websocket?op=" +
+      config.Host +
+        "?op=" +
         PATH +
         "&ot=" +
         token +

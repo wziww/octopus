@@ -23,6 +23,7 @@
 import hd from "../../lib/ws";
 import { token } from "../../lib/token";
 import WS from "../../lib/websocket";
+import config from "../../config/index";
 let chartData = {};
 let t = null;
 let index = ["primary", "default", "default", "default", "default", "default"];
@@ -30,13 +31,7 @@ let timeData = [];
 let statsDataT = [];
 let interTime = 1000;
 const PATH = "dev";
-const ws = new WS(
-  "ws://0.0.0.0:8081/v1/websocket?op=" +
-    PATH +
-    "&ot=" +
-    token +
-    "&ocid=nil"
-);
+const ws = new WS(config.Host + "?op=" + PATH + "&ot=" + token + "&ocid=nil");
 export default {
   name: "setting_redis",
   data() {

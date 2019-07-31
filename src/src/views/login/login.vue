@@ -34,10 +34,9 @@ import bg1 from "../../../dist/img/login_bg_1.jpg";
 import bg2 from "../../../dist/img/login_bg_2.jpg";
 import WS from "../../lib/websocket";
 import { TokenSet, PermissionSet } from "../../lib/token";
+import config from "../../config/index";
 const PATH = "login";
-let ws = new WS(
-  "ws://0.0.0.0:8081/v1/websocket?op=" + PATH + "&ot=octopus"
-);
+let ws = new WS(config.Host + "?op=" + PATH + "&ot=octopus");
 export default {
   data() {
     ws.Open();

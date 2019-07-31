@@ -150,14 +150,9 @@
 import hd from "../../lib/ws";
 import WS from "../../lib/websocket";
 import { token, permission, permissionAll } from "../../lib/token";
+import config from "../../config/index";
 const PATH = "monit";
-const ws = new WS(
-  "ws://0.0.0.0:8081/v1/websocket?op=" +
-    PATH +
-    "&ot=" +
-    token +
-    "&ocid=nil"
-);
+const ws = new WS(config.Host + "?op=" + PATH + "&ot=" + token + "&ocid=nil");
 let data = [];
 let type = "cluster";
 let interTime = 1000;
