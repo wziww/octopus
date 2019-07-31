@@ -20,7 +20,7 @@
             >{{item.data.Status}}</a-tag>
           </div>
           <router-link
-            v-if="permission&permissionAll.PSRMISSIONMONIT"
+            v-if="permission&permissionAll.PERMISSIONMONIT"
             :to="'/clusterSlots?id='+item.name"
             class="hd"
           >
@@ -28,7 +28,7 @@
             <span>节点</span>
           </router-link>
           <router-link
-            v-if="permission&permissionAll.PSRMISSIONMONIT"
+            v-if="permission&permissionAll.PERMISSIONMONIT"
             :to="'/redis_monit_main?id='+item.name"
             class="hd"
           >

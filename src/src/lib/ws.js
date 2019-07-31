@@ -7,7 +7,7 @@ const hd = (fn) => {
       const d = JSON.parse(da.data);
       d.Data = JSON.parse(d.Data);
       if (('' + d.Data.code).startsWith('403')) { // unauth
-        return message.error(d.Data.message);
+        return message.warn(d.Data.message);
       }
       if (('' + d.Data.code).startsWith('404')) { // unauth
         return message.error(d.Data.message);

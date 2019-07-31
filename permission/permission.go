@@ -6,8 +6,8 @@ import (
 )
 
 var (
-	// PSRMISSIONMONIT 查看监控界面
-	PSRMISSIONMONIT = 1 << 0
+	// PERMISSIONMONIT 查看监控界面
+	PERMISSIONMONIT = 1 << 0
 	// PERMISSIONDEV dev 运维模式
 	PERMISSIONDEV = 1 << 1
 	// PERMISSIONEXEC 在线操作模式
@@ -32,7 +32,7 @@ func init() {
 			for _, p := range v.Permission {
 				switch p {
 				case "monit":
-					permission |= PSRMISSIONMONIT
+					permission |= PERMISSIONMONIT
 				case "dev":
 					permission |= PERMISSIONDEV
 				case "exec":

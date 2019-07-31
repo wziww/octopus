@@ -9,17 +9,24 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-type router func(data string, conns ...*oSocket) string
+type routerExec func(data string, conns ...*oSocket) string
+type router struct {
+	fn         routerExec
+	permission int
+}
 
-var routerAll map[string]router
+var routerAll map[string]*router
 
 // Router ...
-func Router(path string, r router) {
-	routerAll[path] = r
+func Router(path string, mode int, r routerExec) {
+	routerAll[path] = &router{
+		fn:         r,
+		permission: mode,
+	}
 }
 func init() {
-	routerAll = make(map[string]router)
-	Router("token", func(data string, conns ...*oSocket) string {
+	routerAll = make(map[string]*router)
+	Router("token", 0, func(data string, conns ...*oSocket) string {
 		body := &struct {
 			Token string `json:"token"`
 		}{}
@@ -27,7 +34,7 @@ func init() {
 		conns[0].user = permission.Get(body.Token)
 		return message.Res(200, "success")
 	})
-	Router("namespace", func(data string, conns ...*oSocket) string {
+	Router("namespace", 0, func(data string, conns ...*oSocket) string {
 		body := &struct {
 			Namespace string `json:"namespace"`
 		}{}
@@ -35,7 +42,7 @@ func init() {
 		conns[0].namespace = body.Namespace
 		return message.Res(200, "success")
 	})
-	Router("/login", func(data string, conns ...*oSocket) string {
+	Router("/login", 0, func(data string, conns ...*oSocket) string {
 		body := &struct {
 			Username string `json:"username"`
 			Password string `json:"password"`
@@ -52,10 +59,10 @@ func init() {
 		bts, _ := json.Marshal(d)
 		return string(bts)
 	})
-	Router("/redis", func(data string, conns ...*oSocket) string {
+	Router("/redis", permission.PERMISSIONMONIT, func(data string, conns ...*oSocket) string {
 		return myredis.GetConfig()
 	})
-	Router("/redis/slots/migrating", func(data string, conns ...*oSocket) string {
+	Router("/redis/slots/migrating", permission.PERMISSIONDEV, func(data string, conns ...*oSocket) string {
 		body := &struct {
 			ID         string `json:"id"`
 			SourceID   string `json:"sourceId"`
@@ -86,14 +93,14 @@ func init() {
 		})
 		return message.Res(200, "success")
 	})
-	Router("/redis/clusterSlots", func(data string, conns ...*oSocket) string {
+	Router("/redis/clusterSlots", permission.PERMISSIONDEV, func(data string, conns ...*oSocket) string {
 		c := &struct {
 			ID string `json:"id"`
 		}{}
 		json.Unmarshal([]byte(data), c)
 		return myredis.ClusterSlotsStats(c.ID)
 	})
-	Router("/redis/clusterNodes", func(data string, conns ...*oSocket) string {
+	Router("/redis/clusterNodes", permission.PERMISSIONMONIT, func(data string, conns ...*oSocket) string {
 		c := &struct {
 			ID string `json:"id"`
 		}{}
@@ -101,7 +108,7 @@ func init() {
 
 		return myredis.GetClusterNodes(c.ID)
 	})
-	Router("/redis/setSlots", func(data string, conns ...*oSocket) string {
+	Router("/redis/setSlots", permission.PERMISSIONDEV, func(data string, conns ...*oSocket) string {
 		c := &struct {
 			ID    string `json:"id"`
 			Host  string `json:"host"`
@@ -112,7 +119,7 @@ func init() {
 		json.Unmarshal([]byte(data), c)
 		return myredis.ClusterSlotsSet(c.ID, c.Host, c.Port, c.Start, c.End)
 	})
-	Router("/redis/clusterReplicate", func(data string, conns ...*oSocket) string {
+	Router("/redis/clusterReplicate", permission.PERMISSIONDEV, func(data string, conns ...*oSocket) string {
 		c := &struct {
 			ID     string `json:"id"`
 			Host   string `json:"host"`
@@ -122,7 +129,7 @@ func init() {
 		json.Unmarshal([]byte(data), c)
 		return myredis.ClusterReplicate(c.ID, c.Host, c.Port, c.NodeID)
 	})
-	Router("/redis/clusterForget", func(data string, conns ...*oSocket) string {
+	Router("/redis/clusterForget", permission.PERMISSIONDEV, func(data string, conns ...*oSocket) string {
 		c := &struct {
 			ID     string `json:"id"`
 			NodeID string `json:"nodeid"`
@@ -130,7 +137,7 @@ func init() {
 		json.Unmarshal([]byte(data), c)
 		return myredis.ClusterForget(c.ID, c.NodeID)
 	})
-	Router("/redis/clusterMeet", func(data string, conns ...*oSocket) string {
+	Router("/redis/clusterMeet", permission.PERMISSIONDEV, func(data string, conns ...*oSocket) string {
 		c := &struct {
 			ID   string `json:"id"`
 			Host string `json:"host"`
@@ -139,14 +146,14 @@ func init() {
 		json.Unmarshal([]byte(data), c)
 		return myredis.ClusterMeet(c.ID, c.Host, c.Port)
 	})
-	Router("/redis/detail", func(data string, conns ...*oSocket) string {
+	Router("/redis/detail", permission.PERMISSIONMONIT, func(data string, conns ...*oSocket) string {
 		c := &struct {
 			ID string `json:"id"`
 		}{}
 		json.Unmarshal([]byte(data), c)
 		return myredis.GetDetail(c.ID)
 	})
-	Router("/redis/stats", func(data string, conns ...*oSocket) string {
+	Router("/redis/stats", permission.PERMISSIONMONIT, func(data string, conns ...*oSocket) string {
 		c := &struct {
 			ID string `json:"id"`
 		}{}

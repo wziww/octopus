@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"octopus/message"
 	"octopus/permission"
 	"sync"
 
@@ -106,17 +107,30 @@ func ws(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func handle(message []byte, c *oSocket) []byte {
+func handle(msg []byte, c *oSocket) []byte {
 	b := &struct {
 		Func string `json:"Func"`
 		Data string `json:"Data"`
 	}{}
-	json.Unmarshal(message, b)
+	json.Unmarshal(msg, b)
 	routerPath := b.Func
-	if routerAll[routerPath] != nil {
-		bytes, _ := json.Marshal(&socketReturn{
+	current := routerAll[routerPath]
+	if current != nil {
+		var bytes []byte
+		if current.permission == 0 {
+			goto next
+		}
+		if c.user == nil || (c.user.Permission&current.permission) != 1 {
+			bytes, _ = json.Marshal(&socketReturn{
+				Type: routerPath,
+				Data: message.Res(403001, ""),
+			})
+			return bytes
+		}
+	next:
+		bytes, _ = json.Marshal(&socketReturn{
 			Type: routerPath,
-			Data: routerAll[routerPath](b.Data, c),
+			Data: current.fn(b.Data, c),
 		})
 		return bytes
 	}
