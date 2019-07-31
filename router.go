@@ -5,107 +5,37 @@ import (
 	"octopus/message"
 	"octopus/myredis"
 	"octopus/permission"
-	"sync"
 
 	"github.com/gorilla/websocket"
 )
 
-type _router struct {
-	Path          string
-	Permision     int
-	HasPermission int
-}
-
-func (r *_router) check() int {
-	return r.Permision & r.HasPermission
-}
-
-type router func(data string, conns ...*websocket.Conn) string
+type router func(data string, conns ...*oSocket) string
 
 var routerAll map[string]router
-var userConnGroup *_userConnGroup
-
-type _userConnGroup struct {
-	conns []*userConns
-	lock  sync.RWMutex
-}
-type userConns struct {
-	user  *permission.User
-	conns []*userConnType
-}
-
-type userConnType struct {
-	conn      *websocket.Conn
-	path      string
-	clusterID string
-	id        string
-}
-
-func (c *_userConnGroup) checkSet(token string, conn *websocket.Conn, path, id, clusterID string) bool {
-	if path == "login" {
-		goto next
-	}
-	if path != "dev" && path != "monit" && path != "exec" || clusterID == "" {
-		return false
-	}
-next:
-	c.lock.Lock()
-	defer c.lock.Unlock()
-	for _, v := range c.conns {
-		if v.user.Token == token {
-			if len(v.conns) > 100 {
-				return false
-			}
-			for _, vv := range v.conns {
-				if vv.id == id { // Duplicate id
-					return false
-				}
-			}
-			v.conns = append(v.conns, &userConnType{
-				conn:      conn,
-				path:      path,
-				id:        id,
-				clusterID: clusterID,
-			})
-			return true
-		}
-	}
-	c.conns = append(c.conns, &userConns{
-		user: permission.Get(token),
-		conns: []*userConnType{&userConnType{
-			path:      path,
-			conn:      conn,
-			id:        id,
-			clusterID: clusterID,
-		}},
-	})
-	return true
-}
-func (c *_userConnGroup) checkDel(token string, path string, id string) bool {
-	for _, v := range c.conns {
-		if v.user.Token == token {
-			for i, v2 := range v.conns {
-				if v2.path == path && v2.id == id {
-					c.lock.Lock()
-					v.conns = append(v.conns[:i], v.conns[i+1:]...)
-					c.lock.Unlock()
-					break
-				}
-			}
-		}
-	}
-	return false
-}
 
 // Router ...
 func Router(path string, r router) {
 	routerAll[path] = r
 }
 func init() {
-	userConnGroup = &_userConnGroup{}
-	userConnGroup.conns = make([]*userConns, 0)
 	routerAll = make(map[string]router)
-	Router("/login", func(data string, conns ...*websocket.Conn) string {
+	Router("token", func(data string, conns ...*oSocket) string {
+		body := &struct {
+			Token string `json:"token"`
+		}{}
+		json.Unmarshal([]byte(data), body)
+		conns[0].user = permission.Get(body.Token)
+		return message.Res(200, "success")
+	})
+	Router("namespace", func(data string, conns ...*oSocket) string {
+		body := &struct {
+			Namespace string `json:"namespace"`
+		}{}
+		json.Unmarshal([]byte(data), body)
+		conns[0].namespace = body.Namespace
+		return message.Res(200, "success")
+	})
+	Router("/login", func(data string, conns ...*oSocket) string {
 		body := &struct {
 			Username string `json:"username"`
 			Password string `json:"password"`
@@ -122,10 +52,10 @@ func init() {
 		bts, _ := json.Marshal(d)
 		return string(bts)
 	})
-	Router("/redis", func(data string, conns ...*websocket.Conn) string {
+	Router("/redis", func(data string, conns ...*oSocket) string {
 		return myredis.GetConfig()
 	})
-	Router("/redis/slots/migrating", func(data string, conns ...*websocket.Conn) string {
+	Router("/redis/slots/migrating", func(data string, conns ...*oSocket) string {
 		body := &struct {
 			ID         string `json:"id"`
 			SourceID   string `json:"sourceId"`
@@ -148,32 +78,22 @@ func init() {
 				Type: t,
 				Data: message.Res(200, str),
 			})
-			go func() {
-				userConnGroup.lock.RLock()
-				defer userConnGroup.lock.RUnlock()
-				for _, v := range userConnGroup.conns {
-					if (v.user.Permission & permission.PERMISSIONDEV) == 0 {
-						return
-					}
-					for _, v2 := range v.conns {
-						if v2.path != "dev" || v2.clusterID == body.ID {
-							continue
-						}
-						SafeWrite(v2.conn, bts, websocket.TextMessage)
-					}
+			for _, v := range socketAll.conns {
+				if v.namespace == conns[0].namespace {
+					SafeWrite(v, bts, websocket.TextMessage)
 				}
-			}()
+			}
 		})
-		return ""
+		return message.Res(200, "success")
 	})
-	Router("/redis/clusterSlots", func(data string, conns ...*websocket.Conn) string {
+	Router("/redis/clusterSlots", func(data string, conns ...*oSocket) string {
 		c := &struct {
 			ID string `json:"id"`
 		}{}
 		json.Unmarshal([]byte(data), c)
 		return myredis.ClusterSlotsStats(c.ID)
 	})
-	Router("/redis/clusterNodes", func(data string, conns ...*websocket.Conn) string {
+	Router("/redis/clusterNodes", func(data string, conns ...*oSocket) string {
 		c := &struct {
 			ID string `json:"id"`
 		}{}
@@ -181,7 +101,7 @@ func init() {
 
 		return myredis.GetClusterNodes(c.ID)
 	})
-	Router("/redis/setSlots", func(data string, conns ...*websocket.Conn) string {
+	Router("/redis/setSlots", func(data string, conns ...*oSocket) string {
 		c := &struct {
 			ID    string `json:"id"`
 			Host  string `json:"host"`
@@ -192,7 +112,7 @@ func init() {
 		json.Unmarshal([]byte(data), c)
 		return myredis.ClusterSlotsSet(c.ID, c.Host, c.Port, c.Start, c.End)
 	})
-	Router("/redis/clusterReplicate", func(data string, conns ...*websocket.Conn) string {
+	Router("/redis/clusterReplicate", func(data string, conns ...*oSocket) string {
 		c := &struct {
 			ID     string `json:"id"`
 			Host   string `json:"host"`
@@ -202,7 +122,7 @@ func init() {
 		json.Unmarshal([]byte(data), c)
 		return myredis.ClusterReplicate(c.ID, c.Host, c.Port, c.NodeID)
 	})
-	Router("/redis/clusterForget", func(data string, conns ...*websocket.Conn) string {
+	Router("/redis/clusterForget", func(data string, conns ...*oSocket) string {
 		c := &struct {
 			ID     string `json:"id"`
 			NodeID string `json:"nodeid"`
@@ -210,7 +130,7 @@ func init() {
 		json.Unmarshal([]byte(data), c)
 		return myredis.ClusterForget(c.ID, c.NodeID)
 	})
-	Router("/redis/clusterMeet", func(data string, conns ...*websocket.Conn) string {
+	Router("/redis/clusterMeet", func(data string, conns ...*oSocket) string {
 		c := &struct {
 			ID   string `json:"id"`
 			Host string `json:"host"`
@@ -219,14 +139,14 @@ func init() {
 		json.Unmarshal([]byte(data), c)
 		return myredis.ClusterMeet(c.ID, c.Host, c.Port)
 	})
-	Router("/redis/detail", func(data string, conns ...*websocket.Conn) string {
+	Router("/redis/detail", func(data string, conns ...*oSocket) string {
 		c := &struct {
 			ID string `json:"id"`
 		}{}
 		json.Unmarshal([]byte(data), c)
 		return myredis.GetDetail(c.ID)
 	})
-	Router("/redis/stats", func(data string, conns ...*websocket.Conn) string {
+	Router("/redis/stats", func(data string, conns ...*oSocket) string {
 		c := &struct {
 			ID string `json:"id"`
 		}{}

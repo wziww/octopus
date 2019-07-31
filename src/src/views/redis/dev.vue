@@ -154,9 +154,20 @@ export default {
         this.$route.query.id
     );
     const that = this;
+    ws.OnOpen(function() {
+      ws.SendObj({
+        Func: "namespace",
+        Data: JSON.stringify({
+          namespace: `dev-${that.$route.query.id}`
+        })
+      });
+    });
     const handMessage = hd(function(d) {
       // 接受服务端数据
       let z = [];
+      if (["token", "namespace"].indexOf(d.Type) !== -1) {
+        return;
+      }
       if (d.Type === "/redis/clusterNodes") {
         data.push(
           "// 节点信息 <id> <ip:port> <role> <follow-node-id> <ping-sent> <pong-recv> <config-epoch> <link-state> <slots> ..."
@@ -278,7 +289,6 @@ export default {
     });
     ws.Open();
     ws.OnData(handMessage);
-    ws.Close();
     return {
       data,
       clusterMeetShow: false,

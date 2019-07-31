@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"octopus/message"
 	"octopus/permission"
 	"sync"
 
@@ -27,70 +26,71 @@ type socketReturn struct {
 	Data string
 }
 
-var (
-	sendLock sync.Mutex
-)
+// octopus 内部使用 socket 结构体
+type oSocket struct {
+	mutex     sync.Mutex
+	conn      *websocket.Conn
+	user      *permission.User
+	namespace string
+	connID    string
+}
+
+// 当前所有连接
+type oSocketAll struct {
+	mutex sync.Mutex
+	conns []*oSocket
+}
+
+func (osall *oSocketAll) remove(id string) {
+	osall.mutex.Lock()
+	defer osall.mutex.Unlock()
+	for i, v := range osall.conns {
+		if v.connID == id {
+			v.conn.Close()
+			osall.conns = append(osall.conns[:i], osall.conns[i+1:]...)
+			break
+		}
+	}
+}
+
+var socketAll *oSocketAll
+
+func init() {
+	socketAll = &oSocketAll{}
+}
 
 // SafeWrite ws 并发控制写入
-func SafeWrite(c *websocket.Conn, result []byte, messageType ...int) error {
-	sendLock.Lock()
-	defer sendLock.Unlock()
+func SafeWrite(c *oSocket, result []byte, messageType ...int) error {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
 	mt := websocket.TextMessage
 	if len(messageType) > 0 {
 		mt = messageType[0]
 	}
-	err := c.WriteMessage(mt, result)
+	err := c.conn.WriteMessage(mt, result)
 	return err
 }
 
 func ws(w http.ResponseWriter, r *http.Request) {
-	var c *websocket.Conn
+	var sc *websocket.Conn
 	var err error
-	params := r.URL.Query()
-	tokens := params["ot"] // octopus token
-	var token string
-	if len(tokens) > 0 {
-		token = tokens[0]
-	}
-	if token == "" {
-		w.WriteHeader(403)
-	}
-	var path, clusterID string
-	p := params["op"] // octopus path
-	if len(p) > 0 {
-		path = p[0]
-	}
-	oc := params["ocid"] // octopus cluster id
-	if len(oc) > 0 {
-		clusterID = oc[0]
-	}
 	connID := fmt.Sprintf("%x", md5.Sum([]byte(uuid.New().String())))
-
-	u := permission.Get(token)
-	if u != nil {
-		c, err = upgrader.Upgrade(w, r, nil)
-		if err != nil {
-			log.Print("upgrade:", err)
-			return
-		}
-		if userConnGroup.checkSet(token, c, path, connID, clusterID) {
-		} else {
-			bytes, _ := json.Marshal(&socketReturn{
-				Type: "",
-				Data: message.Res(404002, "error"),
-			})
-			SafeWrite(c, bytes, websocket.TextMessage)
-			return
-		}
-	} else {
-		w.WriteHeader(403)
+	sc, err = upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Print("upgrade:", err)
 		return
 	}
-	defer c.Close()
+	c := &oSocket{
+		conn:   sc,
+		connID: connID,
+	}
+	socketAll.mutex.Lock()
+	socketAll.conns = append(socketAll.conns, c)
+	socketAll.mutex.Unlock()
 	for {
-		mt, message, err := c.ReadMessage()
+		mt, message, err := sc.ReadMessage()
 		if err != nil {
-			userConnGroup.checkDel(token, path, connID)
+			socketAll.remove(connID)
 			break
 		}
 		go func() {
@@ -106,7 +106,7 @@ func ws(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func handle(message []byte, c *websocket.Conn) []byte {
+func handle(message []byte, c *oSocket) []byte {
 	b := &struct {
 		Func string `json:"Func"`
 		Data string `json:"Data"`

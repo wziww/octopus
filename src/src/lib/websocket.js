@@ -1,4 +1,5 @@
 import { message } from 'ant-design-vue';
+import { token } from './token';
 const CLOSED = 0;
 const CONNECTED = 1;
 const ERROR = -1;
@@ -69,6 +70,12 @@ class WS {
     const that = this;
     return () => {
       this.$socketStatus = CONNECTED;
+      this.SendObj({
+        Func: "token",
+        Data: JSON.stringify({
+          token
+        })
+      });
       message.success("ws 成功连接!");
       for (let i = 0; i < that.$onopen.length; i++) {
         if (typeof that.$onopen[i] === 'function') {
