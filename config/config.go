@@ -35,9 +35,10 @@ type Server struct {
 
 // RedisDetail ...
 type RedisDetail struct {
-	Name    string   `toml:"name"`
-	Address []string `toml:"address"`
-	DB      int      `toml:"db"`
+	Name     string   `toml:"name"`
+	Address  []string `toml:"address"`
+	DB       int      `toml:"db"`
+	Password string   `toml:"password"`
 }
 
 // Auth ...

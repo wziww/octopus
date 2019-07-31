@@ -3,6 +3,7 @@ listen_address="0.0.0.0:8081" # websocket port
 [[redis]]
   name="impress"
   address=["10.0.6.49:6379"]
+  password="viewer"
 [[redis]]
   name="antman"
   address=["10.0.6.49:6382"]

@@ -60,6 +60,7 @@ type target struct {
 	Addrs       []string
 	MemoryTotal int64
 	Status      string
+	password    string
 	self        interface{}
 }
 
@@ -104,7 +105,8 @@ func init() {
 	}
 	for _, v := range config.C.Redis {
 		AddSource(v.Name, &redis.Options{
-			Addr: v.Address[0],
+			Addr:     v.Address[0],
+			Password: v.Password,
 		})
 	}
 }
@@ -190,10 +192,12 @@ func ClusterReplicate(id, host, port, nodeid string) string {
 	if !checkIsCluster(id) {
 		return message.Res(404001, "error")
 	}
-	switch redisSources.Get(id).self.(type) {
+	c := redisSources.Get(id)
+	switch c.self.(type) {
 	case *redis.ClusterClient:
 		tmpClient := redis.NewClient(&redis.Options{
-			Addr: host + ":" + port,
+			Addr:     host + ":" + port,
+			Password: c.password,
 		})
 		defer tmpClient.Close()
 		result, err := tmpClient.ClusterReplicate(nodeid).Result()
@@ -232,10 +236,12 @@ func ClusterSlotsSet(id, host, port string, start, end int64) string {
 	if !checkIsCluster(id) {
 		return message.Res(404001, "error")
 	}
-	switch redisSources.Get(id).self.(type) {
+	c := redisSources.Get(id)
+	switch c.self.(type) {
 	case *redis.ClusterClient:
 		tmpClient := redis.NewClient(&redis.Options{
-			Addr: host + ":" + port,
+			Addr:     host + ":" + port,
+			Password: c.password,
 		})
 		defer tmpClient.Close()
 		result, err := tmpClient.Eval(cluster.AddSlotsLua(start, end), []string{}).Result()
@@ -280,7 +286,8 @@ func AddSource(name string, opt *redis.Options) string {
 			REDISTYPE = "cluster"
 			c.(*redis.Client).Close()
 			c = redis.NewClusterClient(&redis.ClusterOptions{
-				Addrs: []string{opt.Addr},
+				Addrs:    []string{opt.Addr},
+				Password: opt.Password,
 			})
 			goto finish
 		}
@@ -297,10 +304,11 @@ finish:
 	if pingStr == "PONG" {
 		log.FMTLog(log.LOGWARN, opt.Addr, "REDIS JOINED")
 		redisSources.Set(n, &target{
-			Name:  name,
-			Type:  REDISTYPE,
-			Addrs: []string{opt.Addr},
-			self:  c,
+			Name:     name,
+			Type:     REDISTYPE,
+			Addrs:    []string{opt.Addr},
+			self:     c,
+			password: opt.Password,
 		})
 	}
 	return message.Res(200, 0)
@@ -538,7 +546,8 @@ func ClusterSlotsMigrating(id, sourceID, targetID string, slotsStart,
 	if !checkIsCluster(id) {
 		return message.Res(404001, "error")
 	}
-	switch redisSources.Get(id).self.(type) {
+	c := redisSources.Get(id)
+	switch c.self.(type) {
 	case *redis.ClusterClient:
 		nodesResult := getDetail(id)
 		var (
@@ -574,11 +583,13 @@ func ClusterSlotsMigrating(id, sourceID, targetID string, slotsStart,
 		* redis v4.x returns the address likes 127.0.0.1:6379@16379
 		*       v3.x likes 127.0.0.1:6379 */
 		tmpSourceClient := redis.NewClient(&redis.Options{
-			Addr: strings.Split(sourceNode.ADDR, "@")[0],
+			Addr:     strings.Split(sourceNode.ADDR, "@")[0],
+			Password: c.password,
 		})
 		defer tmpSourceClient.Close()
 		tmpTargetClient := redis.NewClient(&redis.Options{
-			Addr: strings.Split(targetNode.ADDR, "@")[0], // redis v4.x returns the address likes 127.0.0.1:6379@16379     v3.0 likes 127.0.0.1:6379
+			Addr:     strings.Split(targetNode.ADDR, "@")[0], // redis v4.x returns the address likes 127.0.0.1:6379@16379     v3.0 likes 127.0.0.1:6379
+			Password: c.password,
 		})
 		defer tmpTargetClient.Close()
 		{
