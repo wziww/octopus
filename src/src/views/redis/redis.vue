@@ -2,22 +2,22 @@
   <div>
     <a-list :grid="{ column: 4 }" :dataSource="Data" style="float: left;width: 100%;">
       <a-list-item slot="renderItem" slot-scope="item">
-        <a-card :title="'Pod:' +item.name">
+        <a-card :title="'' +item.data.Name">
+          <!-- <div class="each">
+            <span style="float: left;">名称:</span>
+            <a-tag class="a-tag" color="blue">{{item.data.Name}}</a-tag>
+          </div> -->
           <div class="each">
-            <span style="float: left;">名称:{{item.data.Name}}</span>
+            <span style="float: left;">模式:</span>
+            <a-tag class="a-tag" color="blue">{{item.data.Type}}</a-tag>
           </div>
           <div class="each">
-            <span style="float: left;">模式:{{item.data.Type}}</span>
-          </div>
-          <div class="each">
-            <span style="float: left;">Host:{{item.data.Addrs}}</span>
+            <span style="float: left;">地址:</span>
+            <a-tag class="a-tag" color="blue">{{item.data.Addrs}}</a-tag>
           </div>
           <div class="each" style="border-bottom: 1px solid light; padding-bottom: 10px;">
-            <span style="float: left;">Status:</span>
-            <a-tag
-              :color="item.data.Status==='ok'?'green':'red'"
-              style="float: left;"
-            >{{item.data.Status}}</a-tag>
+            <span style="float: left;">状态:</span>
+            <a-tag class="a-tag" :color="item.data.Status==='ok'?'green':'red'">{{item.data.Status}}</a-tag>
           </div>
           <router-link
             v-if="permission&permissionAll.PERMISSIONMONIT"
@@ -55,11 +55,7 @@ import WS from "../../lib/websocket";
 import { token, permission, permissionAll } from "../../lib/token";
 const PATH = "monit";
 const ws = new WS(
-  "ws://0.0.0.0:8081/v1/websocket?op=" +
-    PATH +
-    "&ot=" +
-    token +
-    "&ocid=nil"
+  "ws://0.0.0.0:8081/v1/websocket?op=" + PATH + "&ot=" + token + "&ocid=nil"
 );
 let Data = [];
 let t = null;
@@ -134,5 +130,10 @@ export default {
   width: 100%;
   margin-bottom: 10px;
   float: left;
+}
+
+.each > .a-tag {
+  float: left;
+  margin-left: 30px;
 }
 </style>
