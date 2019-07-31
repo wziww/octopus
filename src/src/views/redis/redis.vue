@@ -19,15 +19,27 @@
               style="float: left;"
             >{{item.data.Status}}</a-tag>
           </div>
-          <router-link :to="'/clusterSlots?id='+item.name" class="hd">
+          <router-link
+            v-if="permission&permissionAll.PSRMISSIONMONIT"
+            :to="'/clusterSlots?id='+item.name"
+            class="hd"
+          >
             <a-icon type="table" />
             <span>节点</span>
           </router-link>
-          <router-link :to="'/redis_monit_main?id='+item.name" class="hd">
+          <router-link
+            v-if="permission&permissionAll.PSRMISSIONMONIT"
+            :to="'/redis_monit_main?id='+item.name"
+            class="hd"
+          >
             <a-icon type="dashboard" />
             <span>监控</span>
           </router-link>
-          <router-link :to="'/redis_dev?id='+item.name" class="hd">
+          <router-link
+            v-if="permission&permissionAll.PERMISSIONDEV"
+            :to="'/redis_dev?id='+item.name"
+            class="hd"
+          >
             <a-icon type="code" />
             <span>dev</span>
           </router-link>
@@ -40,14 +52,14 @@
 <script>
 import hd from "../../lib/ws";
 import WS from "../../lib/websocket";
-import { token } from "../../lib/token";
+import { token, permission, permissionAll } from "../../lib/token";
 const PATH = "monit";
 const ws = new WS(
-  "ws://0.0.0.0:8081/v1/websocket?octopusPath=" +
+  "ws://0.0.0.0:8081/v1/websocket?op=" +
     PATH +
-    "&octopusToken=" +
+    "&ot=" +
     token +
-    "&octopusClusterID=nil"
+    "&ocid=nil"
 );
 let Data = [];
 let t = null;
@@ -96,7 +108,9 @@ export default {
     return {
       form: this.$form.createForm(this),
       visible: false,
-      Data
+      Data,
+      permission,
+      permissionAll
     };
   },
   beforeDestroy() {
@@ -106,8 +120,7 @@ export default {
       window.clearInterval(t);
     }
   },
-  methods: {
-  }
+  methods: {}
 };
 </script>
 <style lang="stylus" scoped>

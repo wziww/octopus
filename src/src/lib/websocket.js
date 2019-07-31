@@ -1,3 +1,4 @@
+import { message } from 'ant-design-vue';
 const CLOSED = 0;
 const CONNECTED = 1;
 const ERROR = -1;
@@ -9,7 +10,7 @@ class WS {
     this.$url = url;
     this.$socketStatus = CLOSED;
     this.$reconnect = obj.reconnect;
-    this._onclose = () => {
+    this._onclose = (e) => {
       if (this.$reconnect && this.$socketStatus !== CONNECTED) {
         setTimeout(() => {
           this.Open();
@@ -23,7 +24,6 @@ class WS {
   }
   Open() {
     this.$socket = new WebSocket(this.$url);
-    this.$socketStatus = CONNECTED;
     this.$socket.onclose = this._initOnClose();
     this.$socket.onopen = this._initOnOpen();
     this.$socket.onerror = this._initOnError();
@@ -53,22 +53,23 @@ class WS {
     if (!this.$socket) return;
     this.$socket.send(JSON.stringify(d));
   }
-  _initOnClose() {
+  _initOnClose(e) {
     this.$socketStatus = CLOSED;
     const that = this;
-    return () => {
-      that._onclose();
+    return (e) => {
+      that._onclose(e);
       for (let i = 0; i < that.$onclose.length; i++) {
         if (typeof that.$onclose[i] === 'function') {
-          that.$onclose[i]();
+          that.$onclose[i](e);
         }
       }
     };
   }
   _initOnOpen() {
-    this.$socketStatus = CONNECTED;
     const that = this;
     return () => {
+      this.$socketStatus = CONNECTED;
+      message.success("ws 成功连接!");
       for (let i = 0; i < that.$onopen.length; i++) {
         if (typeof that.$onopen[i] === 'function') {
           that.$onopen[i]();
@@ -77,9 +78,9 @@ class WS {
     };
   }
   _initOnError(e) {
-    this.$socketStatus = ERROR;
     const that = this;
     return () => {
+      this.$socketStatus = ERROR;
       for (let i = 0; i < that.$onerror.length; i++) {
         if (typeof that.$onerror[i] === 'function') {
           that.$onerror[i](e);

@@ -13,7 +13,7 @@
       :to="'/redis_dev?id='+$route.query.id"
       class="hd"
     >
-      <a-button type="danger">dev</a-button>
+      <a-button v-if="permission&permissionAll.PERMISSIONDEV" type="danger">dev</a-button>
     </router-link>
     <div style="width: 100%;float: left;margin-bottom: 20px;">
       <a-alert
@@ -149,14 +149,14 @@
 <script>
 import hd from "../../lib/ws";
 import WS from "../../lib/websocket";
-import { token } from "../../lib/token";
+import { token, permission, permissionAll } from "../../lib/token";
 const PATH = "monit";
 const ws = new WS(
-  "ws://0.0.0.0:8081/v1/websocket?octopusPath=" +
+  "ws://0.0.0.0:8081/v1/websocket?op=" +
     PATH +
-    "&octopusToken=" +
+    "&ot=" +
     token +
-    "&octopusClusterID=nil"
+    "&ocid=nil"
 );
 let data = [];
 let type = "cluster";
@@ -281,8 +281,9 @@ export default {
       type,
       maxmemoryWarning,
       usedmemoryWarning,
-      reShardingSlots
-      // chartData
+      reShardingSlots,
+      permission,
+      permissionAll
     };
   },
   methods: {

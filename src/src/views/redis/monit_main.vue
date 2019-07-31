@@ -31,11 +31,11 @@ let statsDataT = [];
 let interTime = 1000;
 const PATH = "dev";
 const ws = new WS(
-  "ws://0.0.0.0:8081/v1/websocket?octopusPath=" +
+  "ws://0.0.0.0:8081/v1/websocket?op=" +
     PATH +
-    "&octopusToken=" +
+    "&ot=" +
     token +
-    "&octopusClusterID=nil"
+    "&ocid=nil"
 );
 export default {
   name: "setting_redis",
@@ -162,6 +162,7 @@ export default {
     };
   },
   beforeDestroy() {
+    ws.Close();
     if (t !== null) {
       window.clearInterval(t);
     }

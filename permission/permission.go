@@ -46,6 +46,13 @@ func init() {
 			})
 		}
 	}
+	token := "octopus"
+	u := &User{
+		Token:    token,
+		Username: "octopus",
+		Password: "octopus",
+	}
+	userGroup = append(userGroup, u)
 }
 func set(u *User) {
 	for _, v := range userGroup {
@@ -67,4 +74,14 @@ func Get(token string) *User {
 		}
 	}
 	return nil
+}
+
+// Login ...
+func Login(username, password string) (string, int) {
+	for _, v := range userGroup {
+		if v.Username == username && v.Password == password {
+			return v.Token, v.Permission
+		}
+	}
+	return "", 0
 }

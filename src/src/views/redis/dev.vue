@@ -146,11 +146,11 @@ export default {
   name: "setting_redis",
   data() {
     ws = new WS(
-      "ws://0.0.0.0:8081/v1/websocket?octopusPath=" +
+      "ws://0.0.0.0:8081/v1/websocket?op=" +
         PATH +
-        "&octopusToken=" +
+        "&ot=" +
         token +
-        "&octopusClusterID=" +
+        "&ocid=" +
         this.$route.query.id
     );
     const that = this;
