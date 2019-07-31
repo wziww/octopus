@@ -6,14 +6,17 @@
       :style="{height: '100vh',overflow: 'auto',position: 'fixed', left: 0 }"
     >
       <div class="logo">
-        <img :style="{width: 'auto' , height: '100%'}">
+        <img :style="{width: 'auto' , height: '100%'}" />
       </div>
-      <a-menu theme="dark" mode="inline" :defaultSelectedKeys="[$route.meta.Index]">
+      <a-menu theme="dark" mode="vertical" :defaultSelectedKeys="[$route.meta.Index]">
         <a-menu-item key="1">
           <router-link to="/">
-            <a-icon type="cloud-o"/>
+            <a-icon type="cloud-o" />
             <span>数据源</span>
           </router-link>
+        </a-menu-item>
+        <a-menu-item selectable="false" @click="clear();logout();">
+          <span>登出</span>
         </a-menu-item>
       </a-menu>
     </a-layout-sider>
@@ -29,16 +32,24 @@
 </template>
 
 <script>
+import { clear } from "../lib/token";
 export default {
   name: "common",
   data() {
     return {
+      clear
       // collapsed: false
     };
   },
   // collapsed() {
   //   this.collapsed = !this.collapsed;
   // },
-  methods: {}
+  methods: {
+    logout() {
+      this.$router.push({
+        path: "/login"
+      });
+    }
+  }
 };
 </script>

@@ -16,6 +16,10 @@ const permissionAll = {
   // PERMISSIONEXEC 在线操作模式
   PERMISSIONEXEC: 1 << 2
 };
+function clear() {
+  localStorage.removeItem("token");
+  localStorage.removeItem("permission");
+}
 export {
-  token, TokenSet, permission, PermissionSet, permissionAll
+  token, TokenSet, permission, PermissionSet, permissionAll, clear
 };

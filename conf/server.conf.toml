@@ -17,6 +17,11 @@ listen_address="0.0.0.0:8081" # websocket port
   password="root"
   # dev | monit | exec
   permission=["dev","monit","exec"]  
+[[auth]]
+  user="viewer"
+  password="viewer"
+  # dev | monit | exec
+  permission=[]  
 
 [prometheus]
   path="/prometheus"

@@ -43,7 +43,7 @@
             <a-icon type="code" />
             <span>dev</span>
           </router-link>
-          <a-icon type="delete" class="hd" @click="del(item.name)" />
+          <!-- <a-icon type="delete" class="hd" @click="del(item.name)" /> -->
         </a-card>
       </a-list-item>
     </a-list>

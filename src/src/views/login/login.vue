@@ -75,11 +75,10 @@ export default {
         })
       });
       ws.OnData(function(d) {
-        console.log(d.data);
         const data = JSON.parse(d.data);
         if (data.Type === "/login") {
           const t = JSON.parse(data.Data);
-          if (t) {
+          if (t.token) {
             TokenSet(t.token);
             PermissionSet(t.permission);
             that.$router.push("/");
