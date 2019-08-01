@@ -19,6 +19,7 @@ type Config struct {
 	Log        *Log
 	Auth       []Auth     `toml:"auth"`
 	AuthConfig AuthConfig `toml:"auth-config"`
+	Opcap      *Opcap     `toml:"opcap"`
 }
 
 // Log 日志配置
@@ -51,6 +52,12 @@ type Auth struct {
 // AuthConfig ...
 type AuthConfig struct {
 	Key string `toml:"key"`
+}
+
+// Opcap ...
+type Opcap struct {
+	Device    string `toml:"device"`
+	BPFFilter string `toml:"BPFFilter"`
 }
 
 func init() {

@@ -1,5 +1,5 @@
 [server]
-listen_address="0.0.0.0:8081" # websocket port
+  listen_address="0.0.0.0:8081" # websocket port
 [[redis]]
   name="impress"
   address=["10.0.6.49:6379"]
@@ -23,8 +23,10 @@ listen_address="0.0.0.0:8081" # websocket port
   password="viewer"
   # dev | monit | exec
   permission=[]  
-
 [prometheus]
   path="/prometheus"
 
+[opcap]
+  device="en0"
+  BPFFilter="host 10.0.2.32 and dst port 6379" # http://www.tcpdump.org/manpages/pcap-filter.7.html
 
