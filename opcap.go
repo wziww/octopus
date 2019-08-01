@@ -113,32 +113,28 @@ func main() {
 		handle,
 		handle.LinkType(),
 	)
-	go func(h *pcap.Handle) {
-		for packet := range packetSource.Packets() {
-			var eth layers.Ethernet
-			var ip4 layers.IPv4
-			var tcp layers.TCP
-			parser := gopacket.NewDecodingLayerParser(
-				layers.LayerTypeEthernet, &eth, &ip4, &tcp)
-			decodedLayers := []gopacket.LayerType{}
-			parser.DecodeLayers(packet.Data(), &decodedLayers)
-			if len(tcp.Payload) == 0 {
-				continue
-			}
-			cmd := string(tcp.Payload)
-			go func(str string) {
-				rp := &rdsProtocol{}
-				rp.parse(str)
-				if rp.paramsLen > 0 {
-					currentCommand := rp.params[0].value
-					commands.mutex.Lock()
-					commands.CC[currentCommand]++
-					fmt.Println(commands.CC[currentCommand])
-					commands.mutex.Unlock()
-				}
-			}(cmd)
+	for packet := range packetSource.Packets() {
+		var eth layers.Ethernet
+		var ip4 layers.IPv4
+		var tcp layers.TCP
+		parser := gopacket.NewDecodingLayerParser(
+			layers.LayerTypeEthernet, &eth, &ip4, &tcp)
+		decodedLayers := []gopacket.LayerType{}
+		parser.DecodeLayers(packet.Data(), &decodedLayers)
+		if len(tcp.Payload) == 0 {
+			continue
 		}
-	}(handle)
-	for {
+		cmd := string(tcp.Payload)
+		go func(str string) {
+			rp := &rdsProtocol{}
+			rp.parse(str)
+			if rp.paramsLen > 0 {
+				currentCommand := rp.params[0].value
+				commands.mutex.Lock()
+				commands.CC[currentCommand]++
+				fmt.Println(commands.CC[currentCommand])
+				commands.mutex.Unlock()
+			}
+		}(cmd)
 	}
 }
