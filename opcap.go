@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"octopus/config"
 	"strconv"
@@ -23,7 +22,7 @@ var (
 
 type _commands struct {
 	CC    map[string]int64 `json:"cc"`
-	mutex sync.Mutex
+	mutex sync.RWMutex
 }
 
 var commands *_commands
@@ -92,7 +91,9 @@ func main() {
 		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(200)
 			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+			commands.mutex.RLock()
 			bts, _ := json.Marshal(commands.CC)
+			commands.mutex.RUnlock()
 			w.Write(bts)
 			return
 		})
@@ -132,7 +133,6 @@ func main() {
 				currentCommand := rp.params[0].value
 				commands.mutex.Lock()
 				commands.CC[currentCommand]++
-				fmt.Println(commands.CC[currentCommand])
 				commands.mutex.Unlock()
 			}
 		}(cmd)
