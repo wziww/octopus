@@ -30,6 +30,12 @@ class WS {
     this.$socket.onerror = this._initOnError();
     this.$socket.onmessage = this._initOnMessage();
   }
+  _clean() {
+    this.$onclose = [];
+    this.$onerror = [];
+    this.$onopen = [];
+    this.$onmessage = [];
+  }
   Close(fn) {
     if (!this.$socket) return;
     this.$socket.close();
@@ -64,6 +70,7 @@ class WS {
           that.$onclose[i](e);
         }
       }
+      that._clean();
     };
   }
   _initOnOpen() {
