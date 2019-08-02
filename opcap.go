@@ -76,9 +76,7 @@ func main() {
 	}()
 	go func() {
 		server := &http.Server{
-			Addr:         "0.0.0.0:9712",
-			WriteTimeout: 5 * time.Second,
-			ReadTimeout:  5 * time.Second,
+			Addr: "0.0.0.0:9712",
 		}
 		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(200)
