@@ -8,6 +8,8 @@ import (
 	"sync"
 	"time"
 
+	_ "net/http/pprof"
+
 	"github.com/google/gopacket/layers"
 
 	"github.com/google/gopacket"
