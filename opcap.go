@@ -1,11 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"net/http"
 	"octopus/config"
-	"strconv"
-	"strings"
 	"sync"
 	"time"
 
@@ -17,7 +16,9 @@ import (
 
 var (
 	// CRLF Carriage-Return Line-Feed 回车&换行
-	CRLF = "\r\n"
+	CRLF  = []byte("\r\n")
+	charx = []byte{42}
+	chard = []byte{36}
 )
 
 type _commands struct {
@@ -28,40 +29,29 @@ type _commands struct {
 var commands *_commands
 
 type rdsProtocol struct {
-	paramsLen int // 参数数量
+	paramsLen byte // 参数数量
 	params    []params
 }
 type params struct {
-	len   int    // 参数长度
-	value string // 参数内容
+	len   byte   // 参数长度
+	value []byte // 参数内容
 }
 
-func (r *rdsProtocol) parse(str string) bool {
-	pms := strings.Split(str, CRLF)
+func (r *rdsProtocol) parse(bts []byte) bool {
+	pms := bytes.Split(bts, CRLF)
 	if len(pms) < 3 {
 		return false
 	}
 	for i, v := range pms {
 		if i == 0 {
-			if strings.IndexAny(v, "*") == -1 {
+			if v[0] != charx[0] {
 				return false
 			}
-			plarr := strings.Split(v, "*")
-			if len(plarr) < 2 {
-				return false
-			}
-			c, _ := strconv.Atoi(plarr[1])
-			r.paramsLen = c
-		} else if i%2 == 1 {
-			varr := strings.Split(v, "$")
-			if len(varr) < 2 {
-				return false
-			}
-			l, _ := strconv.Atoi(varr[1])
-			va := pms[i+1]
+			r.paramsLen = v[1]
+		} else if ((i % 2) == 1) && i+1 < len(pms) {
 			r.params = append(r.params, params{
-				len:   l,
-				value: va,
+				len:   v[1],
+				value: pms[i+1],
 			})
 		}
 	}
@@ -125,16 +115,15 @@ func main() {
 		if len(tcp.Payload) == 0 {
 			continue
 		}
-		cmd := string(tcp.Payload)
-		go func(str string) {
+		go func(bts []byte) {
 			rp := &rdsProtocol{}
-			rp.parse(str)
+			rp.parse(bts)
 			if rp.paramsLen > 0 {
 				currentCommand := rp.params[0].value
 				commands.mutex.Lock()
-				commands.CC[currentCommand]++
+				commands.CC[string(currentCommand)]++
 				commands.mutex.Unlock()
 			}
-		}(cmd)
+		}(tcp.Payload)
 	}
 }
