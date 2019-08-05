@@ -64,16 +64,16 @@ func init() {
 	commands.CC = make(map[string]int64, 0)
 }
 func main() {
-	go func() {
-		for {
-			select {
-			case <-time.After(60 * time.Second):
-				commands.mutex.Lock()
-				commands.CC = make(map[string]int64, 0)
-				commands.mutex.Unlock()
-			}
-		}
-	}()
+	// go func() {
+	// 	for {
+	// 		select {
+	// 		case <-time.After(60 * time.Second):
+	// 			commands.mutex.Lock()
+	// 			commands.CC = make(map[string]int64, 0)
+	// 			commands.mutex.Unlock()
+	// 		}
+	// 	}
+	// }()
 	go func() {
 		server := &http.Server{
 			Addr: "0.0.0.0:9712",
@@ -118,12 +118,12 @@ func main() {
 		go func(bts []byte) {
 			rp := &rdsProtocol{}
 			rp.parse(bts)
-			// if rp.paramsLen > 0 {
-			// 	currentCommand := rp.params[0].value
-			// 	commands.mutex.Lock()
-			// 	commands.CC[string(currentCommand)]++
-			// 	commands.mutex.Unlock()
-			// }
+			if rp.paramsLen > 0 {
+				currentCommand := rp.params[0].value
+				commands.mutex.Lock()
+				commands.CC[string(currentCommand)]++
+				commands.mutex.Unlock()
+			}
 		}(tcp.Payload)
 	}
 }
