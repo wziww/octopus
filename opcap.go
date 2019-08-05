@@ -118,12 +118,12 @@ func main() {
 		go func(bts []byte) {
 			rp := &rdsProtocol{}
 			rp.parse(bts)
-			if rp.paramsLen > 0 {
-				currentCommand := rp.params[0].value
-				commands.mutex.Lock()
-				commands.CC[string(currentCommand)]++
-				commands.mutex.Unlock()
-			}
+			// if rp.paramsLen > 0 {
+			// 	currentCommand := rp.params[0].value
+			// 	commands.mutex.Lock()
+			// 	commands.CC[string(currentCommand)]++
+			// 	commands.mutex.Unlock()
+			// }
 		}(tcp.Payload)
 	}
 }
