@@ -8,3 +8,6 @@ Gopkg.lock
 /test
 tmp
 octopus
+a.out*
+./cpp/a*
+.vscode*
