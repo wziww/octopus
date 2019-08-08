@@ -28,5 +28,5 @@
 
 [opcap]
   device="en0"
-  BPFFilter="host 10.0.2.32 and dst port 6379" # http://www.tcpdump.org/manpages/pcap-filter.7.html
+  BPFFilter="host 10.0.6.29 and dst port 8080" # http://www.tcpdump.org/manpages/pcap-filter.7.html
 
