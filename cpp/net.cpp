@@ -67,12 +67,16 @@ void *handleAccept(void *ptr)
         cmd_mutex.lock();
         for (map<string, int>::reverse_iterator iter = cmdCount.rbegin(); iter != cmdCount.rend(); iter++)
         {
-          cout << iter->first << endl;
-          cout << iter->second << endl;
-          write(fd, (void *)&iter->first, sizeof(iter->first));
+          char buffer[sizeof(iter->first)];
+          char v_buffer[sizeof(iter->second)];
+          sprintf(v_buffer, "%d", iter->second);
+          for (int i = 0; i < sizeof(iter->first); i++)
+          {
+            buffer[i] = iter->first[i];
+          }
+          write(fd, buffer, sizeof(buffer));
           write(fd, CRLF, sizeof(CRLF));
-          string count = to_string((long long int)iter->second);
-          write(fd, (void *)&count, sizeof(count));
+          write(fd, v_buffer, sizeof(v_buffer));
           write(fd, CRLF, sizeof(CRLF));
         }
         cmd_mutex.unlock();
