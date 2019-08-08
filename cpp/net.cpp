@@ -70,7 +70,7 @@ void *handleAccept(void *ptr)
           write(fd, (void *)&iter->first, sizeof(iter->first));
           write(fd, CRLF, sizeof(CRLF));
           string count = to_string((long long int)iter->second);
-          write(fd, &count, sizeof(count));
+          write(fd, (void *)&count, sizeof(count));
           write(fd, CRLF, sizeof(CRLF));
         }
         cmd_mutex.unlock();
