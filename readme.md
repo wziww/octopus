@@ -31,10 +31,10 @@ listen_address="0.0.0.0:8081" # websocket port
   permission=[]  
 ```
 ## opcap
-: opcap 是基于 libpcap 以 cpp 实现的 tcp 层面的嗅探插件，目前提供了分析 redis 实时命令的功能
-: 同时提供基础 tcp 功能，例如 telnet xxx.xxx.xxx.xxx 9712
-: 命令： ping、get、quit
-: get 命令获取实时统计结果，每行 k-v 以标准 CRLF 结尾
+- opcap 是基于 libpcap 以 cpp 实现的 tcp 层面的嗅探插件，目前提供了分析 redis 实时命令的功能
+- 同时提供基础 tcp 功能，例如 telnet xxx.xxx.xxx.xxx 9712
+- 命令： ping、get、quit
+- get 命令获取实时统计结果，每行 k-v 以标准 CRLF 结尾
 ## Demo
 ![avatar](./img/clusterList.png)
 ![avatar](./img/devMode.png)
