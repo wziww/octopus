@@ -35,7 +35,7 @@ tcp_server::tcp_server(int listen_port)
   myserver.sin_addr.s_addr = htonl(INADDR_ANY);
   myserver.sin_port = htons(listen_port);
 
-  if (bind(socket_fd, (sockaddr *)&myserver, sizeof(myserver)) < 0)
+  if (::bind(socket_fd, (sockaddr *)&myserver, sizeof(myserver)) < 0)
   {
     printf("%s\n", strerror(errno));
     exit(1);
