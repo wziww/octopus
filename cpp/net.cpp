@@ -49,53 +49,43 @@ tcp_server::tcp_server(int listen_port)
 };
 void *handleAccept(void *ptr)
 {
-  try
+  int fd = *(int *)ptr;
+  while (true)
   {
-    int fd = *(int *)ptr;
-    while (true)
+    char buffer[MAXSIZE];
+    memset(buffer, 0, MAXSIZE);
+    if ((read(fd, buffer, MAXSIZE)) < 0)
     {
-      char buffer[MAXSIZE];
-      memset(buffer, 0, MAXSIZE);
-      if ((read(fd, buffer, MAXSIZE)) < 0)
+      printf("%s\n", strerror(errno));
+      exit(1);
+    }
+    else
+    {
+      printf("%s\n", string(buffer).c_str());
+      if (string(buffer) == "get\r\n")
       {
-        printf("%s\n", strerror(errno));
-        exit(1);
+        cmd_mutex.lock();
+        for (map<string, int>::reverse_iterator iter = cmdCount.rbegin(); iter != cmdCount.rend(); iter++)
+        {
+          write(fd, (void *)&iter->first, sizeof(iter->first));
+          write(fd, CRLF, sizeof(CRLF));
+          string count = to_string((long long int)iter->second);
+          write(fd, &count, sizeof(count));
+          write(fd, CRLF, sizeof(CRLF));
+        }
+        cmd_mutex.unlock();
       }
-      else
+      if (string(buffer) == "quit\r\n")
       {
-        printf("%s\n", string(buffer).c_str());
-        if (string(buffer) == "get\r\n")
-        {
-          cmd_mutex.lock();
-          for (map<string, int>::reverse_iterator iter = cmdCount.rbegin(); iter != cmdCount.rend(); iter++)
-          {
-            write(fd, (void *)&iter->first, sizeof(iter->first));
-            write(fd, CRLF, sizeof(CRLF));
-            string count = to_string((long long int)iter->second);
-            write(fd, &count, sizeof(count));
-            write(fd, CRLF, sizeof(CRLF));
-          }
-          cmd_mutex.unlock();
-        }
-        if (string(buffer) == "quit\r\n")
-        {
-          break;
-        }
+        break;
       }
     }
-    close(fd);
-    client_mutex.lock();
-    CLIENT_COUNT--;
-    client_mutex.unlock();
-    pthread_exit(0);
   }
-  catch (...)
-  {
-    client_mutex.lock();
-    CLIENT_COUNT--;
-    client_mutex.unlock();
-    pthread_exit(0);
-  }
+  close(fd);
+  client_mutex.lock();
+  CLIENT_COUNT--;
+  client_mutex.unlock();
+  pthread_exit(0);
 };
 int tcp_server::recv_msg()
 {
