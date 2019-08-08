@@ -71,7 +71,7 @@ void *handleAccept(void *ptr)
           {
             write(fd, (void *)&iter->first, sizeof(iter->first));
             write(fd, CRLF, sizeof(CRLF));
-            string count = to_string((int)iter->second);
+            string count = ::to_string((int)iter->second);
             write(fd, &count, sizeof(count));
             write(fd, CRLF, sizeof(CRLF));
           }
