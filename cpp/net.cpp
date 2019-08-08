@@ -67,6 +67,8 @@ void *handleAccept(void *ptr)
         cmd_mutex.lock();
         for (map<string, int>::reverse_iterator iter = cmdCount.rbegin(); iter != cmdCount.rend(); iter++)
         {
+          cout << iter->first << endl;
+          cout << iter->second << endl;
           write(fd, (void *)&iter->first, sizeof(iter->first));
           write(fd, CRLF, sizeof(CRLF));
           string count = to_string((long long int)iter->second);
