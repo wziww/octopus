@@ -47,6 +47,13 @@ tcp_server::tcp_server(int listen_port)
     exit(1);
   }
 };
+void _write(int __fd, const void *__buf, size_t __nbyte)
+{
+  if (write(__fd, __buf, __nbyte) <= 0)
+  {
+    printf("write error\n");
+  }
+}
 void *handleAccept(void *ptr)
 {
   int fd = *(int *)ptr;
@@ -54,14 +61,24 @@ void *handleAccept(void *ptr)
   {
     char buffer[MAXSIZE];
     memset(buffer, 0, MAXSIZE);
-    if ((read(fd, buffer, MAXSIZE)) < 0)
+    int len = (read(fd, buffer, MAXSIZE));
+    if (len < 0)
     {
       printf("%s\n", strerror(errno));
-      exit(1);
+      break;
+    }
+    else if (len == 0)
+    {
+      break;
     }
     else
     {
-      if (string(buffer) == "get\r\n")
+      if (string(buffer) == "ping\r\n")
+      {
+        _write(fd, "pong", 4);
+        _write(fd, CRLF, sizeof(CRLF));
+      }
+      else if (string(buffer) == "get\r\n")
       {
         cmd_mutex.lock();
         for (map<string, int>::reverse_iterator iter = cmdCount.rbegin(); iter != cmdCount.rend(); iter++)
@@ -73,14 +90,14 @@ void *handleAccept(void *ptr)
           {
             buffer[i] = iter->first[i];
           }
-          write(fd, buffer, sizeof(buffer));
-          write(fd, CRLF, sizeof(CRLF));
-          write(fd, v_buffer, sizeof(v_buffer));
-          write(fd, CRLF, sizeof(CRLF));
+          _write(fd, buffer, sizeof(buffer));
+          _write(fd, CRLF, sizeof(CRLF));
+          _write(fd, v_buffer, sizeof(v_buffer));
+          _write(fd, CRLF, sizeof(CRLF));
         }
         cmd_mutex.unlock();
       }
-      if (string(buffer) == "quit\r\n")
+      else if (string(buffer) == "quit\r\n")
       {
         break;
       }

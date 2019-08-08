@@ -44,7 +44,7 @@ int main()
     exit(1);
   }
   struct bpf_program filter;
-  pcap_compile(device, &filter, "host 10.0.6.29 and dst port 6379", 1, 0);
+  pcap_compile(device, &filter, "dst port 6379", 1, 0);
   pcap_setfilter(device, &filter);
 
   pcap_loop(device, -1, getPacket, NULL);

@@ -138,9 +138,9 @@
           </span>
         </template>
       </a-table-column>
-      <a-table-column title="操作" data-index="operation" key="operation">
+      <a-table-column title="opcap" data-index="operation" key="operation">
         <template slot-scope="operation">
-          <a-tag color="#0ea7fb">{{"节点监控"||operation}}</a-tag>
+          <a-tag :color="operation=='节点监控'?'#0ea7fb':'#2c2c2c'">{{operation}}</a-tag>
         </template>
       </a-table-column>
     </a-table>
@@ -255,7 +255,7 @@ export default {
             })(),
             UsedMemory: (i.UsedMemory / 1024 / 1024).toFixed(2),
             TotalSystemMemory: (i.TotalSystemMemory / 1024 / 1024).toFixed(2),
-            operation: []
+            operation: i.OpcapOnline ? "节点监控" : "不可用"
           });
         }
         data = data

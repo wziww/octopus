@@ -28,6 +28,7 @@ void initMethod()
   validMethod["append"] = true;
   validMethod["hgetall"] = true;
   validMethod["zadd"] = true;
+  validMethod["info"] = true;
 }
 /*
  * redis 方法统计

@@ -9,6 +9,7 @@ import (
 	"octopus/log"
 	"octopus/message"
 	cluster "octopus/myredis/cluster"
+	"octopus/opcap"
 	"strconv"
 	"strings"
 	"sync"
@@ -87,15 +88,16 @@ type Memory struct {
 
 // DetailResult node detail
 type DetailResult struct {
-	ID      string
-	ADDR    string
-	FOLLOW  string
-	ROLE    string
-	EPOTH   string
-	STATE   string
-	SLOT    string
-	Type    string
-	VERSION string
+	ID          string
+	ADDR        string
+	FOLLOW      string
+	ROLE        string
+	EPOTH       string
+	STATE       string
+	SLOT        string
+	Type        string
+	VERSION     string
+	OpcapOnline bool
 	Memory
 }
 
@@ -428,6 +430,17 @@ func getDetail(id string) []*DetailResult {
 			ADDR: z.Options().Addr,
 			Type: "single",
 		}
+		address := strings.Split(v.ADDR, ":")[0] + ":9712"
+		conn, e := opcap.CreateOrGetClient(address)
+		if e != nil {
+			v.OpcapOnline = false
+			log.FMTLog(log.LOGERROR, e.Error())
+		} else {
+			str := opcap.PING(conn, address)
+			if str == "pong" {
+				v.OpcapOnline = true
+			}
+		}
 		getMemory(z, v)
 		return []*DetailResult{v}
 	case *redis.ClusterClient:
@@ -492,6 +505,16 @@ func getDetail(id string) []*DetailResult {
 			for _, z := range servers {
 				if len(strings.Split(v.ADDR, z.ADDR)) > 1 {
 					v.VERSION = z.RedisVersion
+					address := strings.Split(v.ADDR, ":")[0] + ":9712"
+					conn, e := opcap.CreateOrGetClient(address)
+					if e != nil {
+						v.OpcapOnline = false
+						log.FMTLog(log.LOGERROR, e.Error())
+					} else {
+						if opcap.PING(conn, address) == "pong" {
+							v.OpcapOnline = true
+						}
+					}
 				}
 			}
 		}
@@ -754,5 +777,11 @@ func RemoveSource(id string) string {
 		redisSources.Get(id).self.(*redis.ClusterClient).Close()
 	}
 	redisSources.Delete(id)
+	return message.Res(200, nil)
+}
+
+// CheckConnect 查看嗅探插件是否在线
+func CheckConnect(address string) string {
+	opcap.CreateOrGetClient(address)
 	return message.Res(200, nil)
 }
