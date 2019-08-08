@@ -9,7 +9,6 @@
 #define CRLF "\r\n"
 
 using std::string;
-using std::to_string;
 
 static int CLIENT_COUNT = 0;
 const int CLIENT_MAX_COUNT = 2;
