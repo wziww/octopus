@@ -9,6 +9,7 @@
 #define CRLF "\r\n"
 
 using std::string;
+using std::to_string;
 
 static int CLIENT_COUNT = 0;
 const int CLIENT_MAX_COUNT = 2;
@@ -70,7 +71,7 @@ void *handleAccept(void *ptr)
           {
             write(fd, (void *)&iter->first, sizeof(iter->first));
             write(fd, CRLF, sizeof(CRLF));
-            string count = ::to_string((int)iter->second);
+            string count = to_string((long long int)iter->second);
             write(fd, &count, sizeof(count));
             write(fd, CRLF, sizeof(CRLF));
           }
