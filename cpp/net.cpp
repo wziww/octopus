@@ -77,7 +77,10 @@ void *handleAccept(void *ptr)
           }
           cmd_mutex.unlock();
         }
-        printf("Received message: %s\n", buffer);
+        if (string(buffer) == "quit\r\n")
+        {
+          break;
+        }
       }
     }
     close(fd);
