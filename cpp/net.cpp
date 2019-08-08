@@ -61,7 +61,6 @@ void *handleAccept(void *ptr)
     }
     else
     {
-      printf("%s\n", string(buffer).c_str());
       if (string(buffer) == "get\r\n")
       {
         cmd_mutex.lock();
