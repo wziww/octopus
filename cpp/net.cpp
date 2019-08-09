@@ -89,6 +89,8 @@ void *handleAccept(void *ptr)
         _write(fd, CRLF, sizeof(CRLF));
         for (map<string, int>::reverse_iterator iter = cmdCount.rbegin(); iter != cmdCount.rend(); iter++)
         {
+          std::cout << iter->first.c_str() << std::endl;
+          std::cout << sizeof(iter->first.c_str()) << std::endl;
           char v_buffer[sizeof(iter->second)];
           memset(v_buffer, 0, sizeof(v_buffer));
           sprintf(v_buffer, "%d", iter->second);
