@@ -82,6 +82,11 @@ void *handleAccept(void *ptr)
       else if (_cmd == "get\r\n")
       {
         cmd_mutex.lock();
+        int len = cmdCount.size();
+        char len_buffer[sizeof(len)];
+        sprintf(len_buffer, "%d", len);
+        _write(fd, len_buffer, sizeof(len_buffer));
+        _write(fd, CRLF, sizeof(CRLF));
         for (map<string, int>::reverse_iterator iter = cmdCount.rbegin(); iter != cmdCount.rend(); iter++)
         {
           char buffer[sizeof(iter->first)];
