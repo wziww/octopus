@@ -139,8 +139,11 @@
         </template>
       </a-table-column>
       <a-table-column title="opcap" data-index="operation" key="operation">
-        <template slot-scope="operation">
-          <a-tag :color="operation=='节点监控'?'#0ea7fb':'#2c2c2c'">{{operation}}</a-tag>
+        <template slot-scope="operation,record">
+          <a-tag
+            @click="()=>opcap(record)"
+            :color="operation=='节点监控'?'#0ea7fb':'#2c2c2c'"
+          >{{operation}}</a-tag>
         </template>
       </a-table-column>
     </a-table>
@@ -282,6 +285,11 @@ export default {
     };
   },
   methods: {
+    opcap(record) {
+      if (record.operation !== "不可用") {
+        this.$router.push("/opcap?address=" + record.address.split(":")[0]);
+      }
+    },
     getPopupContainer(trigger) {
       return trigger.parentElement;
     },

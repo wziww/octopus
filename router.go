@@ -59,6 +59,13 @@ func init() {
 		bts, _ := json.Marshal(d)
 		return string(bts)
 	})
+	Router("/opcap", permission.PERMISSIONMONIT, func(data string, conns ...*oSocket) string {
+		body := &struct {
+			Address string `json:"address"`
+		}{}
+		json.Unmarshal([]byte(data), body)
+		return myredis.OpcapCount(body.Address)
+	})
 	Router("/redis", permission.PERMISSIONMONIT, func(data string, conns ...*oSocket) string {
 		return myredis.GetConfig()
 	})

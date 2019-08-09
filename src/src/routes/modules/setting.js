@@ -1,3 +1,12 @@
+const RedisOpcap = {
+  path: '/opcap',
+  name: 'setting_node_opcap',
+  component: () => import('@v/redis/opcap.vue'),
+  meta: {
+    title: 'redis-opcap',
+    Index: '1'
+  }
+};
 const RedisDev = {
   path: '/redis_dev',
   name: 'setting_redis_dev',
@@ -48,5 +57,6 @@ export {
   RedisPage,
   RedisMonit,
   RedisMonitMain,
-  RedisDev
+  RedisDev,
+  RedisOpcap
 };

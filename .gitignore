@@ -9,5 +9,6 @@ Gopkg.lock
 tmp
 octopus
 a.out*
-./cpp/a*
+/cpp/a*
+/cpp/opcap
 .vscode*

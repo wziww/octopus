@@ -1,6 +1,6 @@
 import { Error404 } from './base';
 import common from '../common/common';
-import { SettingPage, RedisPage, RedisMonit, RedisMonitMain, RedisDev } from './modules/setting';
+import { SettingPage, RedisPage, RedisMonit, RedisMonitMain, RedisDev, RedisOpcap } from './modules/setting';
 export default [
   {
     path: '/login',
@@ -19,6 +19,7 @@ export default [
       RedisMonit,
       RedisMonitMain,
       RedisDev,
+      RedisOpcap,
       Error404
     ]
   }

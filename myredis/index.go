@@ -434,7 +434,8 @@ func getDetail(id string) []*DetailResult {
 		conn, e := opcap.CreateOrGetClient(address)
 		if e != nil {
 			v.OpcapOnline = false
-			log.FMTLog(log.LOGERROR, e.Error())
+			log.FMTLog(log.LOGWARN, "opcap connected error")
+			log.FMTLog(log.LOGWARN, e.Error())
 		} else {
 			str := opcap.PING(conn, address)
 			if str == "pong" {
@@ -505,14 +506,17 @@ func getDetail(id string) []*DetailResult {
 			for _, z := range servers {
 				if len(strings.Split(v.ADDR, z.ADDR)) > 1 {
 					v.VERSION = z.RedisVersion
-					address := strings.Split(v.ADDR, ":")[0] + ":9712"
-					conn, e := opcap.CreateOrGetClient(address)
-					if e != nil {
-						v.OpcapOnline = false
-						log.FMTLog(log.LOGERROR, e.Error())
-					} else {
-						if opcap.PING(conn, address) == "pong" {
-							v.OpcapOnline = true
+					v.OpcapOnline = false
+					if v.ROLE == "myself,master" {
+						address := strings.Split(v.ADDR, ":")[0] + ":9712"
+						conn, e := opcap.CreateOrGetClient(address)
+						if e != nil {
+							log.FMTLog(log.LOGWARN, "opcap connected error")
+							log.FMTLog(log.LOGWARN, e.Error())
+						} else {
+							if opcap.PING(conn, address) == "pong" {
+								v.OpcapOnline = true
+							}
 						}
 					}
 				}
@@ -784,4 +788,17 @@ func RemoveSource(id string) string {
 func CheckConnect(address string) string {
 	opcap.CreateOrGetClient(address)
 	return message.Res(200, nil)
+}
+
+// OpcapCount 嗅探插件统计结果
+func OpcapCount(address string) string {
+	address += ":9712"
+	conn, e := opcap.CreateOrGetClient(address)
+	if e != nil {
+		log.FMTLog(log.LOGWARN, "opcap connected error")
+		log.FMTLog(log.LOGWARN, e.Error())
+	} else {
+		return message.Res(200, strings.Join(opcap.Count(conn, address), "_"))
+	}
+	return ""
 }
