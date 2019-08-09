@@ -73,12 +73,13 @@ void *handleAccept(void *ptr)
     }
     else
     {
-      if (string(buffer) == "ping\r\n")
+      string _cmd = string(buffer);
+      if (_cmd == "ping\r\n")
       {
         _write(fd, "pong", 4);
         _write(fd, CRLF, sizeof(CRLF));
       }
-      else if (string(buffer) == "get\r\n")
+      else if (_cmd == "get\r\n")
       {
         cmd_mutex.lock();
         for (map<string, int>::reverse_iterator iter = cmdCount.rbegin(); iter != cmdCount.rend(); iter++)
@@ -97,7 +98,7 @@ void *handleAccept(void *ptr)
         }
         cmd_mutex.unlock();
       }
-      else if (string(buffer) == "quit\r\n")
+      else if (_cmd == "quit\r\n")
       {
         break;
       }
