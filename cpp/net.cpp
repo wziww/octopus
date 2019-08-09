@@ -90,6 +90,7 @@ void *handleAccept(void *ptr)
         for (map<string, int>::reverse_iterator iter = cmdCount.rbegin(); iter != cmdCount.rend(); iter++)
         {
           char *buffer = new char[sizeof(iter->first)];
+          std::cout << iter->first << std::endl;
           char v_buffer[sizeof(iter->second)];
           memset(v_buffer, 0, sizeof(v_buffer));
           sprintf(v_buffer, "%d", iter->second);
