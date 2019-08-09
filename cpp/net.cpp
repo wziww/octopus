@@ -94,11 +94,11 @@ void *handleAccept(void *ptr)
           char v_buffer[sizeof(iter->second)];
           memset(v_buffer, 0, sizeof(v_buffer));
           sprintf(v_buffer, "%d", iter->second);
-          for (int i = 0; i < sizeof(iter->first); i++)
-          {
-            buffer[i] = iter->first[i];
-          }
-          _write(fd, buffer, sizeof(buffer));
+          // for (int i = 0; i < sizeof(iter->first); i++)
+          // {
+          //   buffer[i] = [i];
+          // }
+          _write(fd, (&iter->first), sizeof(buffer));
           _write(fd, CRLF, sizeof(CRLF));
           _write(fd, v_buffer, sizeof(v_buffer));
           _write(fd, CRLF, sizeof(CRLF));
