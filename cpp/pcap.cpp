@@ -10,6 +10,7 @@
 #include <mutex>
 #include <pthread.h>
 #include <unistd.h>
+#include <string.h>
 #include "net.h"
 #include "pcap.h"
 
@@ -39,7 +40,8 @@ void count_cmd(const u_char *payload, int len)
   int i;
   const u_char *ch;
   ch = payload;
-  char cmd[100] = "";
+  char cmd[100];
+  memset(cmd, 0, sizeof(cmd));
   int index = 0;
   if (len < 8 || len > 8 + 50)
     return;

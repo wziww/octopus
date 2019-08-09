@@ -89,8 +89,10 @@ void *handleAccept(void *ptr)
         _write(fd, CRLF, sizeof(CRLF));
         for (map<string, int>::reverse_iterator iter = cmdCount.rbegin(); iter != cmdCount.rend(); iter++)
         {
-          char buffer[sizeof(iter->first)] = "";
+          char buffer[sizeof(iter->first)];
+          memset(buffer, 0, sizeof(buffer));
           char v_buffer[sizeof(iter->second)];
+          memset(v_buffer, 0, sizeof(v_buffer));
           sprintf(v_buffer, "%d", iter->second);
           for (int i = 0; i < sizeof(iter->first); i++)
           {
