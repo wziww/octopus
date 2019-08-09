@@ -96,7 +96,6 @@ void *handleAccept(void *ptr)
           _write(fd, CRLF, sizeof(CRLF));
           _write(fd, v_buffer, sizeof(v_buffer));
           _write(fd, CRLF, sizeof(CRLF));
-          delete[] buffer;
         }
         cmd_mutex.unlock();
       }
