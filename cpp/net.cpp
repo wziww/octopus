@@ -87,12 +87,12 @@ void *handleAccept(void *ptr)
         sprintf(len_buffer, "%d", len);
         _write(fd, len_buffer, sizeof(len_buffer));
         _write(fd, CRLF, sizeof(CRLF));
-        for (auto iter : cmdCount)
+        for (map<string, int>::reverse_iterator iter = cmdCount.rbegin(); iter != cmdCount.rend(); iter++)
         {
-          char v_buffer[sizeof(iter.second)];
+          char v_buffer[sizeof(iter->second)];
           memset(v_buffer, 0, sizeof(v_buffer));
-          sprintf(v_buffer, "%d", iter.second);
-          _write(fd, iter.first.c_str(), sizeof(iter.first));
+          sprintf(v_buffer, "%d", iter->second);
+          _write(fd, iter->first.c_str(), sizeof(iter->first));
           _write(fd, CRLF, sizeof(CRLF));
           _write(fd, v_buffer, sizeof(v_buffer));
           _write(fd, CRLF, sizeof(CRLF));
