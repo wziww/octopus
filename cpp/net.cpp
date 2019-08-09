@@ -96,6 +96,7 @@ void *handleAccept(void *ptr)
           sprintf(v_buffer, "%d", iter->second);
           for (int i = 0; i < sizeof(iter->first); i++)
           {
+            std::cout << iter->first[i] << std::endl;
             buffer[i] = iter->first[i];
           }
           _write(fd, buffer, sizeof(buffer));
