@@ -94,7 +94,7 @@ void *handleAccept(void *ptr)
           char v_buffer[sizeof(iter->second)];
           memset(v_buffer, 0, sizeof(v_buffer));
           sprintf(v_buffer, "%d", iter->second);
-          printf("%d",sizeof(iter->first));
+          printf("%s",sizeof(iter->first));
           for (int i = 0; i < sizeof(iter->first); i++)
           {
             buffer[i] = iter->first[i];
