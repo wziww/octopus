@@ -287,7 +287,7 @@ export default {
   methods: {
     opcap(record) {
       if (record.operation !== "不可用") {
-        this.$router.push("/opcap?address=" + record.address.split(":")[0]);
+        window.open("/opcap?address=" + record.address.split(":")[0]);
       }
     },
     getPopupContainer(trigger) {
