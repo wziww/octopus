@@ -2,7 +2,7 @@
   listen_address="0.0.0.0:8081" # websocket port
 [[redis]]
   name="impress"
-  address=["10.0.6.49:6379"]
+  address=["0.0.0.0:6379"]
   # password="viewer"
 [log]
   # log_path="./tmp/"  # 日志存放目录,需人为创建好目录，不设置该值的时候，默认 stdout 进行日志输出

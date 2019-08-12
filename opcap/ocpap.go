@@ -1,8 +1,8 @@
 package opcap
 
 import (
-	"fmt"
 	"net"
+	"octopus/log"
 	"strconv"
 	"sync"
 )
@@ -33,7 +33,7 @@ func CreateOrGetClient(address string) (c *OConn, err error) {
 	defer mutex.Unlock()
 	if client[address] == nil {
 		conn, e := net.Dial("tcp", address)
-		if err == nil {
+		if e == nil {
 			client[address] = &OConn{
 				conn: conn,
 			}
@@ -48,25 +48,20 @@ func PING(conn *OConn, address string) string {
 	if conn == nil {
 		return "failed"
 	}
-	conn.mutex.Lock()
-	defer conn.mutex.Unlock()
-
-	conn.conn.Write([]byte("ping\r\n"))
-	var buf = make([]byte, 10)
-	_, err := conn.conn.Read(buf)
-	if err != nil {
-		mutex.Lock()
-		defer mutex.Unlock()
-		delete(client, address)
+	e := Write(conn, address, []byte("ping\r\n"))
+	if e != nil {
 		return "failed"
 	}
-	if len(string(buf)) >= 4 {
-		return string(buf)[0:4]
+	head := readCRLF(conn)
+	if len(string(head)) >= 4 {
+		return string(head)[0:4]
 	}
-	return string(buf) // return pong
+	return string(head) // return pong
 }
 
 func readCRLF(conn *OConn) []byte {
+	conn.mutex.Lock()
+	defer conn.mutex.Unlock()
 	var index int
 	var all []byte
 	for i := 0; i < MAXSIZE; i++ {
@@ -86,21 +81,34 @@ func readCRLF(conn *OConn) []byte {
 	return all
 }
 
+// Write ...
+func Write(conn *OConn, address string, bts []byte) (e error) {
+	conn.mutex.Lock()
+	defer conn.mutex.Unlock()
+	_, e = conn.conn.Write(bts)
+	if e != nil {
+		delete(client, address)
+	}
+	return
+}
+
 // Count ...
 func Count(conn *OConn, address string) (result []string) {
 	if conn == nil {
 		return []string{"failed"}
 	}
-	conn.mutex.Lock()
-	defer conn.mutex.Unlock()
-	conn.conn.Write([]byte("get\r\n"))
+	e := Write(conn, address, []byte("get\r\n"))
+	if e != nil {
+		return
+	}
 	head := readCRLF(conn)
 	if len(head) == 0 {
 		return
 	}
 	len, e := strconv.Atoi(string(head))
-	fmt.Println(e)
-
+	if e != nil {
+		log.FMTLog(log.LOGERROR, e.Error())
+	}
 	for i := 0; i < len*2; i += 2 {
 		result = append(result, string(readCRLF(conn)))
 		result = append(result, string(readCRLF(conn)))

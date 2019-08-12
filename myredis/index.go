@@ -443,6 +443,12 @@ func getDetail(id string) []*DetailResult {
 			}
 		}
 		getMemory(z, v)
+		servers := _getServer(id)
+		for _, z := range servers {
+			if len(strings.Split(v.ADDR, z.ADDR)) > 1 {
+				v.VERSION = z.RedisVersion
+			}
+		}
 		return []*DetailResult{v}
 	case *redis.ClusterClient:
 		z := redisSources.Get(id).self.(*redis.ClusterClient)

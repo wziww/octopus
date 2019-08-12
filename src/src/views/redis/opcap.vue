@@ -1,24 +1,21 @@
-<template></template>
+<template>
+  <!-- <div> -->
+  <ve-pie style="width: 50%;float: left;" :data="data"></ve-pie>
+  <!-- </div> -->
+</template>
 <script>
 import hd from "../../lib/ws";
 import WS from "../../lib/websocket";
-import { token, permission, permissionAll } from "../../lib/token";
+import { token } from "../../lib/token";
 import config from "../../config/index";
 const PATH = "monit";
 const ws = new WS(config.Host + "?op=" + PATH + "&ot=" + token + "&ocid=nil");
-let data = [];
-let type = "cluster";
+let data = {};
 let interTime = 1000;
 let t = null;
-let t2 = null;
-let index = ["primary", "default", "default", "default", "default", "default"];
 export default {
   name: "setting_redis",
   data() {
-    data = [];
-    let maxmemoryWarning = ["none"];
-    let usedmemoryWarning = "none";
-    let reShardingSlots = "none";
     const that = this;
     ws.Open();
     ws.OnOpen(() => {
@@ -34,24 +31,33 @@ export default {
       }, interTime);
     });
     const handMessage = hd(d => {
-      console.log(d);
       if (d.Type === "/opcap") {
+        let tmpD = [];
+        if (d.Data && typeof d.Data === "string") {
+          d.Data = d.Data.split("_");
+        }
+        for (let i = 0; i < d.Data.length; i += 2) {
+          tmpD.push({
+            命令: d.Data[i],
+            次数: d.Data[i + 1]
+          });
+        }
+        that.data = {
+          columns: ["命令", "次数"],
+          rows: tmpD
+        };
       }
     });
     ws.OnData(handMessage);
     return {
-      data,
+      data
     };
   },
-  methods: {
-  },
+  methods: {},
   beforeDestroy() {
     ws.Close();
     if (t !== null) {
       window.clearInterval(t);
-    }
-    if (t2 !== null) {
-      window.clearInterval(t2);
     }
   }
 };

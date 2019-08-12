@@ -14,7 +14,6 @@ using std::to_string;
 static int CLIENT_COUNT = 0;
 const int CLIENT_MAX_COUNT = 2;
 static std::mutex client_mutex;
-
 void *tcpInit(void *ptr)
 {
   tcp_server ts(PORT);
@@ -29,7 +28,12 @@ tcp_server::tcp_server(int listen_port)
     printf("%s\n", strerror(errno));
     exit(1);
   }
-
+  int flag = 1;
+  if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &flag, sizeof(flag)) < 0)
+  {
+    printf("socket setsockopt error=%d(%s)!!!\n", errno, strerror(errno));
+    exit(1);
+  }
   memset(&myserver, 0, sizeof(myserver));
   myserver.sin_family = AF_INET;
   myserver.sin_addr.s_addr = htonl(INADDR_ANY);

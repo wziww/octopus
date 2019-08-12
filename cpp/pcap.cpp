@@ -40,29 +40,44 @@ void count_cmd(const u_char *payload, int len)
   int i;
   const u_char *ch;
   ch = payload;
-  char cmd[100];
-  memset(cmd, 0, sizeof(cmd));
-  int index = 0;
-  if (len < 8 || len > 8 + 50)
-    return;
-  ch += 8;
-  for (i = 7; i < len; i++)
+  if (*ch != '*') // "*1\r\n$3\r\nget\r\n"
   {
-    if (isprint(*ch) && index < 100)
+    cmd_mutex.unlock();
+    return;
+  }
+  int index = 0;
+  for (int z = 0; z < 2; z++)
+  {
+    for (int i = 0; i < len; i++)
     {
-      cmd[index] = ((char)*ch <= 'Z' && (char)*ch >= 'A') ? (char)*ch - ('Z' - 'z') : (char)*ch; // to lower
+      if (*ch == '\n')
+      {
+        ch++;
+        index++;
+        goto next;
+      }
+      else if (i == len)
+      {
+        break;
+      }
+      ch++;
       index++;
     }
-    else
-    {
-      break;
-    }
+  next:
+    continue;
+  }
+  char *cmd = new char[len - index - 2];
+  memset(cmd, 0, len - index - 2);
+  for (int i = 0; i < len - index - 2; i++)
+  {
+    cmd[i] = ((char)*ch <= 'Z' && (char)*ch >= 'A') ? (char)*ch - ('Z' - 'z') : (char)*ch; // to lower
     ch++;
   }
   if (validMethod[string(cmd)])
   {
     cmdCount[string(cmd)] = cmdCount[string(cmd)] + 1;
   }
+  delete []cmd;
   cmd_mutex.unlock();
   return;
 }
