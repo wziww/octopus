@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div style="width: 100%;float: left;margin-bottom: 20px;">
+    <div style="width: 80%;float: left;margin-bottom: 20px;">
       <span class="each-chose" style="font-size: 20px;font-weight: border;">Refresh Every :</span>
       <a-button class="each-chose" :type="index[0]" @click="chose(0)">1 s</a-button>
       <a-button class="each-chose" :type="index[1]" @click="chose(1)">10 s</a-button>
@@ -8,6 +8,7 @@
       <a-button class="each-chose" :type="index[3]" @click="chose(3)">1 min</a-button>
       <a-button class="each-chose" :type="index[4]" @click="chose(4)">5 min</a-button>
       <a-button class="each-chose" :type="index[5]" @click="chose(5)">10 min</a-button>
+      <a-button type="primary" @click="showDrawer">设置</a-button>
     </div>
     <div class="each-chart">
       <ve-line :data="lineChartData" :settings="lineChartSettings"></ve-line>
@@ -17,6 +18,16 @@
       <ve-pie :data="data"></ve-pie>
       <a-tag color="#f50">5 分钟内命令统计</a-tag>
     </div>
+    <a-drawer
+      width="500"
+      title="监控命令设置"
+      placement="right"
+      :closable="false"
+      @close="onClose"
+      :visible="visible"
+    >
+      <a-checkbox-group :options="plainOptions" v-model="checkedList" @change="onChange" />
+    </a-drawer>
   </div>
 </template>
 <script>
@@ -31,6 +42,10 @@ let data = {};
 let interTime = 1000;
 let index = ["primary", "default", "default", "default", "default", "default"];
 let t = null;
+let checkedList = JSON.parse(localStorage.getItem("checkedList")) || [
+  "get",
+  "set"
+];
 export default {
   name: "setting_redis",
   data() {
@@ -68,9 +83,13 @@ export default {
         const obj = {
           t
         };
+        let _tmpD = [];
         for (let i = 0; i < tmpD.length; i++) {
-          obj[tmpD[i].命令] = tmpD[i].次数;
-          columns.push(tmpD[i].命令);
+          if (checkedList.indexOf(tmpD[i].命令) !== -1) {
+            _tmpD.push(tmpD[i]);
+            obj[tmpD[i].命令] = tmpD[i].次数;
+            columns.push(tmpD[i].命令);
+          }
         }
         timeData.push(obj);
         that.lineChartData = {
@@ -79,7 +98,7 @@ export default {
         };
         that.data = {
           columns: ["命令", "次数"],
-          rows: tmpD
+          rows: _tmpD
         };
       }
     });
@@ -93,10 +112,136 @@ export default {
     return {
       lineChartData: {},
       data,
+      checkedList,
+      plainOptions: [
+        "set",
+        "setnx",
+        "setex",
+        "psetex",
+        "get",
+        "getset",
+        "strlen",
+        "append",
+        "setrange",
+        "getrange",
+        "incr",
+        "incrby",
+        "incrbyfloat",
+        "decr",
+        "decrby",
+        "mset",
+        "msetnx",
+        "mget",
+        // hash table
+        "hset",
+        "hsetnx",
+        "hget",
+        "hexists",
+        "hdel",
+        "hlen",
+        "hstrlen",
+        "hincrby",
+        "hincrbyfloat",
+        "hmset",
+        "hmget",
+        "hkeys",
+        "hvals",
+        "hgetall",
+        "hscan",
+        // list
+        "lpush",
+        "lpushx",
+        "rpush",
+        "rpushx",
+        "lpop",
+        "rpop",
+        "rpoplpush",
+        "lrem",
+        "llen",
+        "lindex",
+        "linsert",
+        "lset",
+        "lrange",
+        "ltrim",
+        "blpop",
+        "brpop",
+        "brpoplpush",
+        // set
+        "sadd",
+        "sismember",
+        "spop",
+        "srandmember",
+        "srem",
+        "smove",
+        "scard",
+        "sasmembersdd",
+        "sscan",
+        "sinter",
+        "sinterstore",
+        "sunion",
+        "sunionstore",
+        "sdiff",
+        "sdiffstore",
+        // zip list
+        "zadd",
+        "zscore",
+        "zincrby",
+        "zcard",
+        "zcount",
+        "zrange",
+        "zrevrange",
+        "zrangebyscore",
+        "zrevrangebyscore",
+        "zrank",
+        "zrevrank",
+        "zrem",
+        "zremrangebyrank",
+        "zremrangebyscore",
+        "zrangebylex",
+        "zlexcount",
+        "zremrangebylex",
+        "zscan",
+        "zunionstore",
+        "zinterstore",
+        // bit map
+        "setbit",
+        "getbit",
+        "bitcount",
+        "bitpos",
+        "bitop",
+        "bitfield",
+        // db
+        "exists",
+        "type",
+        "rename",
+        "renamenx",
+        "move",
+        "del",
+        "randomkey",
+        "dbsize",
+        "keys",
+        "scan",
+        // ttl
+        "expire",
+        "expireat",
+        "ttl"
+      ],
+      visible: false,
       index
     };
   },
   methods: {
+    onChange(checkedValues) {
+      checkedList = checkedValues;
+      this.checkedList = checkedList;
+      localStorage.setItem("checkedList", JSON.stringify(checkedList));
+    },
+    showDrawer() {
+      this.visible = true;
+    },
+    onClose() {
+      this.visible = false;
+    },
     chose(x) {
       const that = this;
       index = [
