@@ -1,8 +1,18 @@
-## Start
+## build
+> 服务端
+```shell
+  make build
+```
+> 前端
+> 编译配置 vi ./src/src/config/index.js > 更改为你需要的 host
+```shell
+  cd src && npm run build
+```
+## start
 ```shell
   ./octopus -c ./your_config.toml
 ```
-## Config example
+## config example
 ```toml
 [server]
 listen_address="0.0.0.0:8081" # websocket port
@@ -31,17 +41,20 @@ listen_address="0.0.0.0:8081" # websocket port
   permission=[]  
 ```
 ## opcap
-  
-``` shell
-  cd cpp && make build && ./opcap -fdst port 6380 -deth0 -t1000
-  # flags -d「device」 -f「BPFFilter」-t「time(s) to clear count」
-```
->  依赖： libpcap libpcap-devel
-> centos: yum install libpcap && yum install libpcap-devel
+> 什么是 opcap 插件
 - opcap 是基于 libpcap 以 cpp 实现的 tcp 层面的嗅探插件，目前提供了分析 redis 实时命令的功能
 - 同时提供基础 tcp 功能，例如 telnet xxx.xxx.xxx.xxx 9712
 - 命令： ping、get、quit
 - get 命令获取实时统计结果，每行 k-v 以标准 CRLF 结尾
+>  依赖： libpcap libpcap-devel
+> centos: yum install libpcap && yum install libpcap-devel
+``` shell
+  # build
+  cd cpp && make build
+  # run
+  # flags -d「device」 -f「BPFFilter」-t「time(s) to clear count」
+  ./opcap -fdst port 6380 -deth0 -t1000
+```
 > opcap 使用示例
 
 ![avatar](./img/opcap-pre.png)
