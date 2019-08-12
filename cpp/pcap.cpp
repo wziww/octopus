@@ -23,14 +23,118 @@ map<string, int> cmdCount;
 map<string, bool> validMethod;
 void initMethod()
 {
-  validMethod["get"] = true;
+  // char[]
   validMethod["set"] = true;
-  validMethod["cluster"] = true;
-  validMethod["del"] = true;
+  validMethod["setnx"] = true;
+  validMethod["setex"] = true;
+  validMethod["psetex"] = true;
+  validMethod["get"] = true;
+  validMethod["getset"] = true;
+  validMethod["strlen"] = true;
   validMethod["append"] = true;
+  validMethod["setrange"] = true;
+  validMethod["getrange"] = true;
+  validMethod["incr"] = true;
+  validMethod["incrby"] = true;
+  validMethod["incrbyfloat"] = true;
+  validMethod["decr"] = true;
+  validMethod["decrby"] = true;
+  validMethod["mset"] = true;
+  validMethod["msetnx"] = true;
+  validMethod["mget"] = true;
+  // hash table
+  validMethod["hset"] = true;
+  validMethod["hsetnx"] = true;
+  validMethod["hget"] = true;
+  validMethod["hexists"] = true;
+  validMethod["hdel"] = true;
+  validMethod["hlen"] = true;
+  validMethod["hstrlen"] = true;
+  validMethod["hincrby"] = true;
+  validMethod["hincrbyfloat"] = true;
+  validMethod["hmset"] = true;
+  validMethod["hmget"] = true;
+  validMethod["hkeys"] = true;
+  validMethod["hvals"] = true;
   validMethod["hgetall"] = true;
+  validMethod["hscan"] = true;
+  // list
+  validMethod["lpush"] = true;
+  validMethod["lpushx"] = true;
+  validMethod["rpush"] = true;
+  validMethod["rpushx"] = true;
+  validMethod["lpop"] = true;
+  validMethod["rpop"] = true;
+  validMethod["rpoplpush"] = true;
+  validMethod["lrem"] = true;
+  validMethod["llen"] = true;
+  validMethod["lindex"] = true;
+  validMethod["linsert"] = true;
+  validMethod["lset"] = true;
+  validMethod["lrange"] = true;
+  validMethod["ltrim"] = true;
+  validMethod["blpop"] = true;
+  validMethod["brpop"] = true;
+  validMethod["brpoplpush"] = true;
+  // set
+  validMethod["sadd"] = true;
+  validMethod["sismember"] = true;
+  validMethod["spop"] = true;
+  validMethod["srandmember"] = true;
+  validMethod["srem"] = true;
+  validMethod["smove"] = true;
+  validMethod["scard"] = true;
+  validMethod["sasmembersdd"] = true;
+  validMethod["sscan"] = true;
+  validMethod["sinter"] = true;
+  validMethod["sinterstore"] = true;
+  validMethod["sunion"] = true;
+  validMethod["sunionstore"] = true;
+  validMethod["sdiff"] = true;
+  validMethod["sdiffstore"] = true;
+  // zip list
   validMethod["zadd"] = true;
-  validMethod["info"] = true;
+  validMethod["zscore"] = true;
+  validMethod["zincrby"] = true;
+  validMethod["zcard"] = true;
+  validMethod["zcount"] = true;
+  validMethod["zrange"] = true;
+  validMethod["zrevrange"] = true;
+  validMethod["zrangebyscore"] = true;
+  validMethod["zrevrangebyscore"] = true;
+  validMethod["zrank"] = true;
+  validMethod["zrevrank"] = true;
+  validMethod["zrem"] = true;
+  validMethod["zremrangebyrank"] = true;
+  validMethod["zremrangebyscore"] = true;
+  validMethod["zrangebylex"] = true;
+  validMethod["zlexcount"] = true;
+  validMethod["zremrangebylex"] = true;
+  validMethod["zscan"] = true;
+  validMethod["zunionstore"] = true;
+  validMethod["zinterstore"] = true;
+  // bit map
+  validMethod["setbit"] = true;
+  validMethod["getbit"] = true;
+  validMethod["bitcount"] = true;
+  validMethod["bitpos"] = true;
+  validMethod["bitop"] = true;
+  validMethod["bitfield"] = true;
+  // db
+  validMethod["exists"] = true;
+  validMethod["type"] = true;
+  validMethod["rename"] = true;
+  validMethod["renamenx"] = true;
+  validMethod["move"] = true;
+  validMethod["del"] = true;
+  validMethod["randomkey"] = true;
+  validMethod["dbsize"] = true;
+  validMethod["keys"] = true;
+  validMethod["scan"] = true;
+  // ttl
+  validMethod["expire"] = true;
+  validMethod["expireat"] = true;
+  validMethod["ttl"] = true;
 }
 /*
  * redis 方法统计
