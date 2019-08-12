@@ -42,7 +42,7 @@ func (p *program) Start() error {
 				httprouter(w, r)
 				return
 			}
-			params := strings.Split(r.RequestURI, "/")
+			params := strings.Split(r.URL.Path, "/")
 			for _, v := range params[len(params)-1:] {
 				for _, z := range v {
 					if z == []rune(".")[0] {
