@@ -105,7 +105,7 @@ void getPacket(u_char *argument, const struct pcap_pkthdr *packet_header,
   size_ip = IP_HL(ip) * 4;
   if (size_ip < 20)
   {
-    printf("   * Invalid IP header length: %u bytes\n", size_ip);
+    // printf("   * Invalid IP header length: %u bytes\n", size_ip);
     return;
   }
   /*
@@ -121,7 +121,7 @@ void getPacket(u_char *argument, const struct pcap_pkthdr *packet_header,
   size_tcp = TH_OFF(tcp) * 4;
   if (size_tcp < 20)
   {
-    printf("   * Invalid TCP header length: %u bytes\n", size_tcp);
+    // printf("   * Invalid TCP header length: %u bytes\n", size_tcp);
     return;
   }
   // printf("   Src port: %d\n", ntohs(tcp->th_sport));
