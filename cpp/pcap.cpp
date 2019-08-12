@@ -113,7 +113,7 @@ void getPacket(u_char *argument, const struct pcap_pkthdr *packet_header,
    */
   if (ip->ip_p != IPPROTO_TCP)
   {
-    printf("   * Invalid TCP packet\n");
+    // printf("   * Invalid TCP packet\n");
     return;
   }
   /* define/compute tcp header offset */
