@@ -83,13 +83,6 @@ export default {
       })
     );
     ws.OnOpen(() => {
-      try {
-        ws.SendObj({
-          Func: "/redis"
-        });
-      } catch (error) {
-        console.error(error);
-      }
       t = setInterval(() => {
         try {
           ws.SendObj({
@@ -98,7 +91,7 @@ export default {
         } catch (error) {
           console.error(error);
         }
-      }, 1000 * 3);
+      }, 1000 * 1);
     });
     return {
       form: this.$form.createForm(this),
@@ -133,6 +126,5 @@ export default {
 
 .each > .a-tag {
   float: left;
-  margin-left: 30px;
 }
 </style>
