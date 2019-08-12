@@ -260,7 +260,10 @@ void *clean(void *ptr)
   {
     cmd_mutex.lock();
     for (map<string, int>::reverse_iterator iter = cmdCount.rbegin(); iter != cmdCount.rend(); iter++)
-      cmdCount[iter->first] = 0;
+    {
+      cmdCount.erase(iter->first);
+      iter++;
+    }
     cmd_mutex.unlock();
     sleep(TIME); // 每分钟清除一次
   }
