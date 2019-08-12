@@ -34,7 +34,7 @@ listen_address="0.0.0.0:8081" # websocket port
   
 ``` shell
   cd cpp && make build && ./opcap -fdst port 6380 -deth0 -t1000
-  # flags -d「device」 to set -f「BPFFilter」-t「time(s) to clear count」
+  # flags -d「device」 -f「BPFFilter」-t「time(s) to clear count」
 ```
 >  依赖： libpcap libpcap-devel
 > centos: yum install libpcap && yum install libpcap-devel
