@@ -71,6 +71,10 @@ void count_cmd(const u_char *payload, int len)
   memset(cmd, 0, 100);
   for (int i = 0; i < len - index - 2 && i < 100; i++)
   {
+    if (*ch == '\r' || *ch == '\n')
+    {
+      break;
+    }
     cmd[i] = ((char)*ch <= 'Z' && (char)*ch >= 'A') ? (char)*ch - ('Z' - 'z') : (char)*ch; // to lower
     ch++;
   }
