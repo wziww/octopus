@@ -3,6 +3,7 @@ debug
 /src/node_modules
 .DS_Store
 /build
+/src/dist
 /src/package-lock.json
 Gopkg.lock
 /test
