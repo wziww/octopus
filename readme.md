@@ -36,15 +36,16 @@ listen_address="0.0.0.0:8081" # websocket port
   cd cpp && make build && ./opcap -fdst port 6380 -deth0 -t1000
   # flags -d「device」 to set -f「BPFFilter」-t「time(s) to clear count」
 ```
-：opcap 使用示例
-![avatar](./img/opcap-pre.png)
-![avatar](./img/opcap.png)
-
 - dependence libpcap
 - opcap 是基于 libpcap 以 cpp 实现的 tcp 层面的嗅探插件，目前提供了分析 redis 实时命令的功能
 - 同时提供基础 tcp 功能，例如 telnet xxx.xxx.xxx.xxx 9712
 - 命令： ping、get、quit
 - get 命令获取实时统计结果，每行 k-v 以标准 CRLF 结尾
+> opcap 使用示例
+
+![avatar](./img/opcap-pre.png)
+![avatar](./img/opcap.png)
+
 ## Demo
 ![avatar](./img/clusterList.png)
 ![avatar](./img/devMode.png)
