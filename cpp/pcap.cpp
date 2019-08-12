@@ -67,9 +67,9 @@ void count_cmd(const u_char *payload, int len)
   next:
     continue;
   }
-  char *cmd = new char[len - index - 2];
-  memset(cmd, 0, len - index - 2);
-  for (int i = 0; i < len - index - 2; i++)
+  char cmd[100];
+  memset(cmd, 0, 100);
+  for (int i = 0; i < len - index - 2 && i < 100; i++)
   {
     cmd[i] = ((char)*ch <= 'Z' && (char)*ch >= 'A') ? (char)*ch - ('Z' - 'z') : (char)*ch; // to lower
     ch++;
@@ -78,7 +78,6 @@ void count_cmd(const u_char *payload, int len)
   {
     cmdCount[string(cmd)] = cmdCount[string(cmd)] + 1;
   }
-  delete[] cmd;
   cmd_mutex.unlock();
   return;
 }
