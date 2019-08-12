@@ -33,15 +33,15 @@ func (p *program) Start() error {
 			WriteTimeout: 5 * time.Second,
 			ReadTimeout:  5 * time.Second,
 		}
+		http.HandleFunc("/v1/websocket", func(w http.ResponseWriter, r *http.Request) {
+			ws(w, r)
+			return
+		})
+		http.HandleFunc("/prometheus", func(w http.ResponseWriter, r *http.Request) {
+			httprouter(w, r)
+			return
+		})
 		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-			if r.URL.Path == "/v1/websocket" {
-				ws(w, r)
-				return
-			}
-			if len(r.RequestURI) >= len("/prometheus") && r.RequestURI[:len("/prometheus")] == "/prometheus" {
-				httprouter(w, r)
-				return
-			}
 			params := strings.Split(r.URL.Path, "/")
 			for _, v := range params[len(params)-1:] {
 				for _, z := range v {
