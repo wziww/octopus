@@ -13,6 +13,7 @@
 #include <string.h>
 #include "net.h"
 #include "pcap.h"
+#include "main.h"
 
 using namespace std;
 
@@ -77,7 +78,7 @@ void count_cmd(const u_char *payload, int len)
   {
     cmdCount[string(cmd)] = cmdCount[string(cmd)] + 1;
   }
-  delete []cmd;
+  delete[] cmd;
   cmd_mutex.unlock();
   return;
 }
@@ -154,6 +155,6 @@ void *clean(void *ptr)
     for (map<string, int>::reverse_iterator iter = cmdCount.rbegin(); iter != cmdCount.rend(); iter++)
       cmdCount[iter->first] = 0;
     cmd_mutex.unlock();
-    sleep(60); // 每分钟清除一次
+    sleep(TIME); // 每分钟清除一次
   }
 }

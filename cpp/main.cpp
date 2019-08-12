@@ -18,11 +18,30 @@ using namespace std;
 #define MAX_TCP_PACKET_SIZE 65535
 /* time to wait to return packets */
 #define TIME_DURATION 1000 * 3
-
+string FILTER_STRING = "dst port 6379";
 /* ethernet headers are always exactly 14 bytes [1] */
-
-int main()
+string DEVICE = "eth0";
+unsigned int TIME = 60;
+int main(int argc, char *argv[])
 {
+  int ch;
+  while ((ch = getopt(argc, argv, "d:f:t:")) != -1)
+  {
+    switch (ch)
+    {
+    case 'd': // set device
+      DEVICE = optarg;
+      break;
+    case 'f': // set fukter string
+      FILTER_STRING = optarg;
+      break;
+    case 't': // set time to clear dat
+      TIME = (unsigned int)atoi(optarg);
+      break;
+    default:
+      break;
+    }
+  }
   initMethod();
   pthread_t pClean, pTcpService;
   if (pthread_create(&pClean, NULL, clean, NULL) != 0)
@@ -36,7 +55,7 @@ int main()
     exit(1);
   }
   char errBuf[PCAP_ERRBUF_SIZE];
-  pcap_t *device = pcap_open_live("en0", MAX_TCP_PACKET_SIZE, 1, TIME_DURATION, errBuf);
+  pcap_t *device = pcap_open_live(DEVICE.c_str(), MAX_TCP_PACKET_SIZE, 1, TIME_DURATION, errBuf);
 
   if (!device)
   {
@@ -44,7 +63,7 @@ int main()
     exit(1);
   }
   struct bpf_program filter;
-  pcap_compile(device, &filter, "dst port 6379", 1, 0);
+  pcap_compile(device, &filter, FILTER_STRING.c_str(), 1, 0);
   pcap_setfilter(device, &filter);
 
   pcap_loop(device, -1, getPacket, NULL);
