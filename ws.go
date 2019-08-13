@@ -120,7 +120,7 @@ func handle(msg []byte, c *oSocket) []byte {
 		if current.permission == 0 {
 			goto next
 		}
-		if c.user == nil || (c.user.Permission&current.permission) != 1 {
+		if c.user == nil || (c.user.Permission&current.permission) == 0 {
 			bytes, _ = json.Marshal(&socketReturn{
 				Type: routerPath,
 				Data: message.Res(403001, ""),
