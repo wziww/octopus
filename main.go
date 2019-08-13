@@ -37,7 +37,7 @@ func (p *program) Start() error {
 			ws(w, r)
 			return
 		})
-		http.HandleFunc("/prometheus", func(w http.ResponseWriter, r *http.Request) {
+		http.HandleFunc("/prometheus/", func(w http.ResponseWriter, r *http.Request) {
 			httprouter(w, r)
 			return
 		})

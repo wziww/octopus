@@ -419,7 +419,8 @@ func getMemory(z *redis.Client, v *DetailResult) {
 	}
 }
 
-func getDetail(id string) []*DetailResult {
+// GetDetailObj ...
+func GetDetailObj(id string) []*DetailResult {
 	if redisSources.Get(id) == nil {
 		return nil
 	}
@@ -536,7 +537,7 @@ func getDetail(id string) []*DetailResult {
 
 // GetDetail ...
 func GetDetail(id string) string {
-	return message.Res(200, getDetail(id))
+	return message.Res(200, GetDetailObj(id))
 }
 
 // 获取不含 slots 的 master 节点
@@ -582,7 +583,7 @@ func ClusterSlotsMigrating(id, sourceID, targetID string, slotsStart,
 	c := redisSources.Get(id)
 	switch c.self.(type) {
 	case *redis.ClusterClient:
-		nodesResult := getDetail(id)
+		nodesResult := GetDetailObj(id)
 		var (
 			sourceNode *DetailResult
 			targetNode *DetailResult
@@ -743,6 +744,36 @@ func getStats(z *redis.Client) *Stats {
 		}
 	}
 	return v
+}
+
+// GetStatsObj 获取节点详情
+// redis  info STATS
+func GetStatsObj(id string) []*Stats {
+	if redisSources.Get(id) == nil {
+		return nil
+	}
+	var result []*Stats
+	var (
+		mutex sync.Mutex
+	)
+	switch redisSources.Get(id).Type {
+	case "single":
+		z := redisSources.Get(id).self.(*redis.Client)
+		v := getStats(z)
+		return []*Stats{v}
+	case "cluster":
+		z := redisSources.Get(id).self.(*redis.ClusterClient)
+		z.ForEachNode(func(c *redis.Client) error {
+			v := getStats(c)
+			mutex.Lock()
+			result = append(result, v)
+			mutex.Unlock()
+			return nil
+		})
+		return result
+	default:
+	}
+	return nil
 }
 
 // GetStats 获取节点详情
