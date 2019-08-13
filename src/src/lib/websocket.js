@@ -7,6 +7,20 @@ class WS {
   constructor(url, obj = {
     reconnect: true
   }) {
+    if (url.startsWith("ws")) {
+      console.log("yes");
+    } else {
+      const host = window.location.host;
+      const protocol = window.location.protocol;
+      switch (protocol.startsWith("https")) {
+        case true:
+          url = 'wss://' + host + url;
+          break;
+        default:
+          url = 'ws://' + host + url;
+          break;
+      }
+    }
     this.$socket = null;
     this.$url = url;
     this.$socketStatus = CLOSED;

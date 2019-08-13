@@ -1,3 +1,3 @@
 export default {
-  Host: "ws://0.0.0.0:8081/v1/websocket"
+  Host: "/v1/websocket" // 同样支持 ws://xxxxxx
 };
