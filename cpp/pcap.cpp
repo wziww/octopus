@@ -259,11 +259,8 @@ void *clean(void *ptr)
   for (;;)
   {
     cmd_mutex.lock();
-    for (map<string, int>::reverse_iterator iter = cmdCount.rbegin(); iter != cmdCount.rend(); iter++)
-    {
-      cmdCount.erase(iter->first);
-      iter++;
-    }
+    printf("start\n");
+    cmdCount.clear();
     cmd_mutex.unlock();
     sleep(TIME); // 每分钟清除一次
   }
