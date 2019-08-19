@@ -81,7 +81,7 @@ void *handleAccept(void *ptr)
       if (_cmd == "ping\r\n")
       {
         _write(fd, "pong", 4);
-        _write(fd, CRLF, sizeof(CRLF));
+        _write(fd, CRLF, 2);
       }
       else if (_cmd == "get\r\n")
       {
