@@ -91,7 +91,7 @@ void *handleAccept(void *ptr)
         char len_buffer[mlenstr.size()];
         strcpy(len_buffer, mlenstr.c_str());
         _write(fd, len_buffer, sizeof(len_buffer));
-        _write(fd, CRLF, sizeof(CRLF));
+        _write(fd, CRLF, 2);
         for (map<string, int>::reverse_iterator iter = cmdCount.rbegin(); iter != cmdCount.rend(); iter++)
         {
           long long int val = iter->second;
@@ -101,9 +101,9 @@ void *handleAccept(void *ptr)
           memset(v_buffer, 0, sizeof(v_buffer));
           sprintf(v_buffer, "%d", iter->second);
           _write(fd, iter->first.c_str(), iter->first.size());
-          _write(fd, CRLF, sizeof(CRLF));
+          _write(fd, CRLF, 2);
           _write(fd, v_buffer, sizeof(v_buffer));
-          _write(fd, CRLF, sizeof(CRLF));
+          _write(fd, CRLF, 2);
         }
         cmd_mutex.unlock();
       }
