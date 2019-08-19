@@ -86,7 +86,7 @@ void *handleAccept(void *ptr)
       else if (_cmd == "get\r\n")
       {
         cmd_mutex.lock();
-        double mlen = cmdCount.size();
+        long long int mlen = cmdCount.size();
         string mlenstr = to_string(mlen);
         char len_buffer[mlenstr.size() + 1];
         strcpy(len_buffer, mlenstr.c_str());
