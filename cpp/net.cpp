@@ -88,9 +88,8 @@ void *handleAccept(void *ptr)
         cmd_mutex.lock();
         long long int mlen = cmdCount.size();
         string mlenstr = to_string(mlen);
-        char len_buffer[mlenstr.size() + 1];
+        char len_buffer[mlenstr.size()];
         strcpy(len_buffer, mlenstr.c_str());
-        std::cout << len_buffer << '\n';
         _write(fd, len_buffer, sizeof(len_buffer));
         _write(fd, CRLF, sizeof(CRLF));
         for (map<string, int>::reverse_iterator iter = cmdCount.rbegin(); iter != cmdCount.rend(); iter++)
