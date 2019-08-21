@@ -33,9 +33,7 @@ func memoryTotal(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id := fmt.Sprintf("%x", md5.Sum([]byte(names[0])))
-	fmt.Println(id)
 	all := myredis.GetDetailObj(id)
-	fmt.Println(all)
 	key := "memory_" + names[0]
 	exportData := "# HELP " + key + " The memory usage situation of the entire of cluster.\n"
 	exportData += "# TYPE " + key + " gauge\n"
@@ -46,7 +44,6 @@ func memoryTotal(w http.ResponseWriter, r *http.Request) {
 		exportData += key + "{type=\"each\",host=\"" + v.ADDR + "\"} " + myredis.Trim(v.Memory.UsedMemory) + " \n"
 	}
 	exportData += key + "{type=\"total\",host=\"*\"} " + strconv.FormatInt(memoryT, 10) + " \n"
-	fmt.Println(exportData)
 	w.Write([]byte(exportData))
 }
 
