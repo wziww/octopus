@@ -63,23 +63,23 @@ func opsTotal(w http.ResponseWriter, r *http.Request) {
 	key := "ops_" + names[0]
 	exportData := "# HELP " + key + " The ops & outputKbps & inputKbps situation  of the entire of cluster.\n"
 	exportData += "# TYPE " + key + " gauge\n"
-	var InstantaneousOutputKbps, InstantaneousInputKbps, InstantaneousOpsPerSec int64
+	var InstantaneousOutputKbps, InstantaneousInputKbps, InstantaneousOpsPerSec float64
 	for _, v := range all {
 		// InstantaneousOutputKbps
-		t, _ := strconv.ParseInt(myredis.Trim(v.InstantaneousOutputKbps), 10, 0)
+		t, _ := strconv.ParseFloat(myredis.Trim(v.InstantaneousOutputKbps), 64)
 		InstantaneousOutputKbps += t
 		exportData += key + "{type=\"each-okbps\",host=\"" + v.ADDR + "\"} " + myredis.Trim(v.InstantaneousOutputKbps) + " \n"
 		// InstantaneousInputKbps
-		t2, _ := strconv.ParseInt(myredis.Trim(v.InstantaneousInputKbps), 10, 0)
+		t2, _ := strconv.ParseFloat(myredis.Trim(v.InstantaneousInputKbps), 64)
 		InstantaneousInputKbps += t2
 		exportData += key + "{type=\"each-ikbps\",host=\"" + v.ADDR + "\"} " + myredis.Trim(v.InstantaneousInputKbps) + " \n"
 		// InstantaneousOpsPerSec
-		t3, _ := strconv.ParseInt(myredis.Trim(v.InstantaneousOpsPerSec), 10, 0)
+		t3, _ := strconv.ParseFloat(myredis.Trim(v.InstantaneousOpsPerSec), 64)
 		InstantaneousOpsPerSec += t3
 		exportData += key + "{type=\"each-ikbps\",host=\"" + v.ADDR + "\"} " + myredis.Trim(v.InstantaneousOpsPerSec) + " \n"
 	}
-	exportData += key + "{type=\"total-okbps\",host=\"*\"} " + strconv.FormatInt(InstantaneousOutputKbps, 10) + " \n"
-	exportData += key + "{type=\"total-ikbps\",host=\"*\"} " + strconv.FormatInt(InstantaneousInputKbps, 10) + " \n"
-	exportData += key + "{type=\"total-ops\",host=\"*\"} " + strconv.FormatInt(InstantaneousInputKbps, 10) + " \n"
+	exportData += key + "{type=\"total-okbps\",host=\"*\"} " + fmt.Sprintf("%.2f", InstantaneousOutputKbps) + " \n"
+	exportData += key + "{type=\"total-ikbps\",host=\"*\"} " + fmt.Sprintf("%.2f", InstantaneousInputKbps) + " \n"
+	exportData += key + "{type=\"total-ops\",host=\"*\"} " + fmt.Sprintf("%.2f", InstantaneousOpsPerSec) + " \n"
 	w.Write([]byte(exportData))
 }
