@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/md5"
+	"fmt"
 	"net/http"
 	"octopus/myredis"
 	"strconv"
@@ -16,7 +18,7 @@ func httprouter(w http.ResponseWriter, r *http.Request) {
 	if easyRouter(r.RequestURI, "/prometheus/memory") {
 		memoryTotal(w, r)
 		return
-	} else if easyRouter(r.RequestURI, "/prometheus/ioo") {
+	} else if easyRouter(r.RequestURI, "/prometheus/ioo") { // inputkbps outputkbps ops
 		opsTotal(w, r)
 		return
 	}
@@ -25,14 +27,17 @@ func httprouter(w http.ResponseWriter, r *http.Request) {
 // 内存统计项
 func memoryTotal(w http.ResponseWriter, r *http.Request) {
 	params := r.URL.Query()
-	id := params["id"]
-	if len(id) < 1 {
+	names := params["name"]
+	if len(names) < 1 {
 		w.Write([]byte("404"))
 		return
 	}
-	all := myredis.GetDetailObj(id[0])
-	key := "memory_" + id[0]
-	exportData := "# HELP " + key + " The memory usage situation  of the entire of cluster.\n"
+	id := fmt.Sprintf("%x", md5.Sum([]byte(names[0])))
+	fmt.Println(id)
+	all := myredis.GetDetailObj(id)
+	fmt.Println(all)
+	key := "memory_" + names[0]
+	exportData := "# HELP " + key + " The memory usage situation of the entire of cluster.\n"
 	exportData += "# TYPE " + key + " gauge\n"
 	var memoryT int64
 	for _, v := range all {
@@ -41,19 +46,21 @@ func memoryTotal(w http.ResponseWriter, r *http.Request) {
 		exportData += key + "{type=\"each\",host=\"" + v.ADDR + "\"} " + myredis.Trim(v.Memory.UsedMemory) + " \n"
 	}
 	exportData += key + "{type=\"total\",host=\"*\"} " + strconv.FormatInt(memoryT, 10) + " \n"
+	fmt.Println(exportData)
 	w.Write([]byte(exportData))
 }
 
 // 流量 / ops 统计项
 func opsTotal(w http.ResponseWriter, r *http.Request) {
 	params := r.URL.Query()
-	id := params["id"]
-	if len(id) < 1 {
+	names := params["name"]
+	if len(names) < 1 {
 		w.Write([]byte("404"))
 		return
 	}
-	all := myredis.GetStatsObj(id[0])
-	key := "ops_" + id[0]
+	id := fmt.Sprintf("%x", md5.Sum([]byte(names[0])))
+	all := myredis.GetStatsObj(id)
+	key := "ops_" + names[0]
 	exportData := "# HELP " + key + " The ops & outputKbps & inputKbps situation  of the entire of cluster.\n"
 	exportData += "# TYPE " + key + " gauge\n"
 	var InstantaneousOutputKbps, InstantaneousInputKbps, InstantaneousOpsPerSec int64
