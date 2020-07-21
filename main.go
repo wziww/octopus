@@ -28,6 +28,7 @@ func (p *program) Init(e svc.Environment) error {
 func (p *program) Start() error {
 	log.FMTLog(log.LOGWARN, "octopus start")
 	go func() {
+		log.FMTLog(log.LOGWARN, "HTTP start at "+config.C.Server.ListenAddress)
 		server := &http.Server{
 			Addr:         config.C.Server.ListenAddress,
 			WriteTimeout: 5 * time.Second,

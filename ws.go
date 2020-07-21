@@ -4,8 +4,8 @@ import (
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
+	"octopus/log"
 	"octopus/message"
 	"octopus/permission"
 	"sync"
@@ -78,7 +78,7 @@ func ws(w http.ResponseWriter, r *http.Request) {
 	connID := fmt.Sprintf("%x", md5.Sum([]byte(uuid.New().String())))
 	sc, err = upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Print("upgrade:", err)
+		log.FMTLog(log.LOGERROR, "upgrade:"+err.Error())
 		return
 	}
 	c := &oSocket{
@@ -99,7 +99,7 @@ func ws(w http.ResponseWriter, r *http.Request) {
 			if result != nil && len(result) > 0 {
 				SafeWrite(c, result, mt)
 				if err != nil {
-					log.Println("write:", err)
+					log.FMTLog(log.LOGERROR, "write:"+err.Error())
 				}
 			}
 		}()
@@ -114,6 +114,7 @@ func handle(msg []byte, c *oSocket) []byte {
 	}{}
 	json.Unmarshal(msg, b)
 	routerPath := b.Func
+	log.FMTLog(log.LOGDEBUG, routerPath)
 	current := routerAll[routerPath]
 	if current != nil {
 		var bytes []byte

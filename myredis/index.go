@@ -36,12 +36,22 @@ var redisSources *_redisSources
 func (r *_redisSources) Set(k string, t *target) {
 	r.rw.Lock()
 	defer r.rw.Unlock()
+	if t != nil {
+		log.FMTLog(log.LOGDEBUG, k, t.Addrs, t.Type)
+	} else {
+		log.FMTLog(log.LOGDEBUG, k, "nil")
+	}
 	r.RS[k] = t
 }
 func (r *_redisSources) Get(k string) *target {
 	r.rw.RLock()
 	defer r.rw.RUnlock()
 	z := r.RS[k]
+	if z != nil {
+		log.FMTLog(log.LOGDEBUG, k, z.Addrs, z.Type)
+	} else {
+		log.FMTLog(log.LOGDEBUG, k, "nil")
+	}
 	return z
 }
 func (r *_redisSources) Range() map[string]*target {
@@ -171,16 +181,21 @@ func ClusterMeet(id string, host string, port string) string {
 
 // ClusterForget ...
 func ClusterForget(id string, nodeid string) string {
-	if checkIsCluster(id) {
+	if !checkIsCluster(id) {
 		return message.Res(404001, "error")
 	}
 	switch redisSources.Get(id).self.(type) {
 	case *redis.ClusterClient:
 		z := redisSources.Get(id).self.(*redis.ClusterClient)
-		str, err := z.ClusterForget(nodeid).Result()
+		err := z.ForEachNode(func(c *redis.Client) error {
+			_, err := z.ClusterForget(nodeid).Result()
+			if err != nil {
+				log.FMTLog(log.LOGWARN, err)
+			}
+			return nil
+		})
 		if err == nil {
-			log.FMTLog(log.LOGERROR, err)
-			return message.Res(200, str)
+			return message.Res(200, "ok")
 		}
 		log.FMTLog(log.LOGERROR, err)
 		return message.Res(500, err.Error())
