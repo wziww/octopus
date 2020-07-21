@@ -73,7 +73,7 @@ func opsTotal(w http.ResponseWriter, r *http.Request) {
 		// InstantaneousOpsPerSec
 		t3, _ := strconv.ParseFloat(myredis.Trim(v.InstantaneousOpsPerSec), 64)
 		InstantaneousOpsPerSec += t3
-		exportData += key + "{type=\"each-ikbps\",host=\"" + v.ADDR + "\"} " + myredis.Trim(v.InstantaneousOpsPerSec) + " \n"
+		exportData += key + "{type=\"each-ops\",host=\"" + v.ADDR + "\"} " + myredis.Trim(v.InstantaneousOpsPerSec) + " \n"
 	}
 	exportData += key + "{type=\"total-okbps\",host=\"*\"} " + fmt.Sprintf("%.2f", InstantaneousOutputKbps) + " \n"
 	exportData += key + "{type=\"total-ikbps\",host=\"*\"} " + fmt.Sprintf("%.2f", InstantaneousInputKbps) + " \n"
