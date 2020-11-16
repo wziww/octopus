@@ -86,7 +86,10 @@ type Stats struct {
 	InstantaneousInputKbps  string
 	InstantaneousOutputKbps string
 	InstantaneousOpsPerSec  string
-	ADDR                    string
+	KeyspaceHits            string
+	KeyspaceMisses          string
+	//--
+	ADDR string
 }
 
 // Memory redis「info memory」
@@ -109,6 +112,7 @@ type DetailResult struct {
 	VERSION     string
 	OpcapOnline bool
 	Memory
+	Stats
 }
 
 func init() {
@@ -412,6 +416,33 @@ func GetConfig() string {
 	return message.Res(200, redisSources.Range())
 }
 
+func _getStats(z *redis.Client, v *DetailResult) {
+	str, _ := z.Info("stats").Result()
+	strArr := strings.Split(str, "\n")
+	for _, z := range strArr {
+		if value := getFromRDSStr(z, "keyspace_hits:"); value != "" {
+			v.KeyspaceHits = value
+			continue
+		}
+		if value := getFromRDSStr(z, "keyspace_misses:"); value != "" {
+			v.KeyspaceMisses = value
+			continue
+		}
+		if value := getFromRDSStr(z, "instantaneous_input_kbps:"); value != "" {
+			v.InstantaneousInputKbps = value
+			continue
+		}
+		if value := getFromRDSStr(z, "instantaneous_ops_per_sec:"); value != "" {
+			v.InstantaneousOpsPerSec = value
+			continue
+		}
+		if value := getFromRDSStr(z, "instantaneous_output_kbps:"); value != "" {
+			v.InstantaneousOutputKbps = value
+			continue
+		}
+	}
+	return
+}
 func getMemory(z *redis.Client, v *DetailResult) {
 	str, _ := z.Info("memory").Result()
 	strArr := toLines(str)
@@ -459,6 +490,7 @@ func GetDetailObj(id string) []*DetailResult {
 			}
 		}
 		getMemory(z, v)
+		_getStats(z, v)
 		servers := _getServer(id)
 		for _, z := range servers {
 			if len(strings.Split(v.ADDR, z.ADDR)) > 1 {
@@ -518,6 +550,7 @@ func GetDetailObj(id string) []*DetailResult {
 				oaddr := c.Options().Addr
 				if len(v.ADDR) >= len(oaddr) && len(strings.Split(v.ADDR, oaddr)) > 1 {
 					getMemory(c, v)
+					_getStats(c, v)
 				}
 			}
 			resultAppendLock.Unlock()
@@ -549,6 +582,94 @@ func GetDetailObj(id string) []*DetailResult {
 	}
 	return nil
 }
+
+type SlogLog struct {
+	Addr  string
+	Count int
+}
+
+// GetSlowLogObj ...
+func GetSlowLogObj(id string) []*SlogLog {
+	if redisSources.Get(id) == nil {
+		return nil
+	}
+	switch redisSources.Get(id).self.(type) {
+	case *redis.Client:
+		return []*SlogLog{}
+	case *redis.ClusterClient:
+		z := redisSources.Get(id).self.(*redis.ClusterClient)
+		var result []*SlogLog
+		var (
+			resultAppendLock sync.Mutex
+		)
+		z.ForEachNode(func(c *redis.Client) error {
+			count, nodesError := c.Do("SLOWLOG", "LEN").Int()
+			if nodesError != nil {
+				log.FMTLog(log.LOGERROR, nodesError)
+				return nodesError
+			}
+			c.Do("SLOWLOG", "RESET")
+			resultAppendLock.Lock()
+			result = append(result, &SlogLog{
+				Addr:  c.Options().Addr,
+				Count: count,
+			})
+			resultAppendLock.Unlock()
+			return nil
+		})
+		return result
+	default:
+	}
+	return nil
+}
+
+// // SlowLogs ...
+// type SlowLogs struct {
+// }
+
+// // GetSlowLogs 慢日志查询
+// func GetSlowLogs(id string) []*DetailResult {
+// 	if redisSources.Get(id) == nil {
+// 		return nil
+// 	}
+// 	switch redisSources.Get(id).self.(type) {
+// 	case *redis.Client:
+// 		// z := redisSources.Get(id).self.(*redis.Client)
+// 		// v := &DetailResult{
+// 		// 	ADDR: z.Options().Addr,
+// 		// 	Type: "single",
+// 		// }
+// 		// address := strings.Split(v.ADDR, ":")[0] + ":9712"
+// 		// conn, e := opcap.CreateOrGetClient(address)
+// 		// if e != nil {
+// 		// 	v.OpcapOnline = false
+// 		// 	log.FMTLog(log.LOGWARN, "opcap connected error")
+// 		// 	log.FMTLog(log.LOGWARN, e.Error())
+// 		// } else {
+// 		// 	str := opcap.PING(conn, address)
+// 		// 	if str == "pong" {
+// 		// 		v.OpcapOnline = true
+// 		// 	}
+// 		// }
+// 		// getMemory(z, v)
+// 		// servers := _getServer(id)
+// 		// for _, z := range servers {
+// 		// 	if len(strings.Split(v.ADDR, z.ADDR)) > 1 {
+// 		// 		v.VERSION = z.RedisVersion
+// 		// 	}
+// 		// }
+// 		return nil
+// 	case *redis.ClusterClient:
+// 		z := redisSources.Get(id).self.(*redis.ClusterClient)
+// 		z.ForEachNode(func(c *redis.Client) error {
+// 			c.SlowLog(10).Result()
+// 			return nil
+// 		})
+// 		return nil
+// 	default:
+// 	}
+// 	return nil
+// }
 
 // GetDetail ...
 func GetDetail(id string) string {
@@ -745,6 +866,14 @@ func getStats(z *redis.Client) *Stats {
 		ADDR: z.Options().Addr,
 	}
 	for _, z := range strArr {
+		if value := getFromRDSStr(z, "keyspace_hits:"); value != "" {
+			v.KeyspaceHits = value
+			continue
+		}
+		if value := getFromRDSStr(z, "keyspace_misses:"); value != "" {
+			v.KeyspaceMisses = value
+			continue
+		}
 		if value := getFromRDSStr(z, "instantaneous_input_kbps:"); value != "" {
 			v.InstantaneousInputKbps = value
 			continue
@@ -853,4 +982,247 @@ func OpcapCount(address string) string {
 		return message.Res(200, strings.Join(opcap.Count(conn, address), "_"))
 	}
 	return ""
+}
+
+// redis debug module
+
+// DebugHtstats 获取指定 db 详情
+// redis  info STATS
+func DebugHtstats(address string, db int) string {
+	// return message.Res(200, result)
+	tcpAddr, err := net.ResolveTCPAddr("tcp", address)
+	if err != nil {
+		return message.Res(400, err.Error())
+	}
+	tmpClient := redis.NewClient(&redis.Options{
+		Network: tcpAddr.Network(),
+		Addr:    address,
+		DB:      db,
+	})
+	defer tmpClient.Close()
+	result, err := tmpClient.Do("DEBUG", "HTSTATS", strconv.Itoa(db)).String()
+	if err != nil {
+		return message.Res(500, err.Error())
+	}
+	return message.Res(200, result)
+}
+
+var (
+	/*
+			  if (o == NULL) {
+		        type = "none";
+		    } else {
+		        switch(o->type) {
+		        case OBJ_STRING: type = "string"; break;
+		        case OBJ_LIST: type = "list"; break;
+		        case OBJ_SET: type = "set"; break;
+		        case OBJ_ZSET: type = "zset"; break;
+		        case OBJ_HASH: type = "hash"; break;
+		        case OBJ_STREAM: type = "stream"; break;
+		        case OBJ_MODULE: {
+		            moduleValue *mv = o->ptr;
+		            type = mv->type->name;
+		        }; break;
+		        default: type = "unknown"; break;
+		        }
+		    }
+	*/
+	typeNone   string = "none"
+	typeString string = "string"
+	typeList   string = "list"
+	typeSet    string = "set"
+	typeZset   string = "zset"
+	typeHash   string = "hash"
+	typeStream string = "stream"
+)
+
+// SafeDel ...
+func SafeDel(address, key string, db int, fn func(string, ...int64)) string {
+	tcpAddr, err := net.ResolveTCPAddr("tcp", address)
+	if err != nil {
+		fn(err.Error())
+		return message.Res(500, err.Error())
+	}
+	tmpClient := redis.NewClient(&redis.Options{
+		Network: tcpAddr.Network(),
+		Addr:    address,
+		DB:      db,
+	})
+	defer tmpClient.Close()
+	// check type
+	t, err := tmpClient.Type(key).Result()
+	if err != nil {
+		fn(err.Error())
+		return message.Res(500, err.Error())
+	}
+	log.FMTLog(log.LOGWARN, fmt.Sprintf("try to del key 「%s」 with type of 「%s」", key, t))
+	switch t {
+	case typeNone:
+		return message.Res(200, "empty key, dont need to del")
+	case typeString:
+		// string 类型暴力删除
+		_, err := tmpClient.Del(key).Result()
+		if err != nil {
+			return message.Res(500, err.Error())
+		}
+		return message.Res(200, "succes")
+	case typeHash:
+		n, err := tmpClient.HLen(key).Result()
+		if err != nil {
+			fn(err.Error())
+			return message.Res(500, err.Error())
+		}
+		fn(fmt.Sprintf("about %d keys in hash key「%s」to del, job starting...", n, key))
+		var keys []string
+		fn(fmt.Sprintf("%d / %d keys to delete", n, n))
+		for {
+			keys, _, err = tmpClient.HScan(key, 0, "*", 10).Result()
+			if err != nil {
+				return message.Res(500, err.Error())
+			}
+			for _, v := range keys {
+				_, err = tmpClient.HDel(key, v).Result()
+				if err != nil {
+					fn(err.Error())
+					return message.Res(500, err.Error())
+				}
+				log.FMTLog(log.LOGDEBUG, fmt.Sprintf("del 「%s」「%s」", key, v))
+			}
+			n2, err := tmpClient.HLen(key).Result()
+			if err != nil {
+				fn(err.Error())
+				return message.Res(500, err.Error())
+			}
+			fn(fmt.Sprintf("%d / %d keys to delete", n2, n))
+			select {
+			case <-time.After(time.Microsecond * 100):
+			}
+			if n2 == 0 {
+				break
+			}
+		}
+		// 当为 hash type 的时候， 如果内置键删除完毕了，redis 会自动删除 key，无需额外再次操作
+		return message.Res(200, "success")
+	case typeZset:
+		n, err := tmpClient.ZCard(key).Result()
+		if err != nil {
+			fn(err.Error())
+			return message.Res(500, err.Error())
+		}
+		fn(fmt.Sprintf("about %d keys in hash key「%s」to del, job starting...", n, key))
+		var keys []string
+		fn(fmt.Sprintf("%d / %d keys to delete", n, n))
+		for {
+			keys, _, err = tmpClient.ZScan(key, 0, "*", 10).Result()
+			if err != nil {
+				fn(err.Error())
+				return message.Res(500, err.Error())
+			}
+			for _, v := range keys {
+				_, err = tmpClient.ZRem(key, v).Result()
+				if err != nil {
+					fn(err.Error())
+					return message.Res(500, err.Error())
+				}
+				log.FMTLog(log.LOGDEBUG, fmt.Sprintf("del 「%s」「%s」", key, v))
+			}
+			n2, err := tmpClient.ZCard(key).Result()
+			if err != nil {
+				fn(err.Error())
+				return message.Res(500, err.Error())
+			}
+			fn(fmt.Sprintf("%d / %d keys to delete", n2, n))
+			select {
+			case <-time.After(time.Microsecond * 100):
+			}
+			if n2 == 0 {
+				break
+			}
+		}
+		// 当为 zset 的时候， 如果内置键删除完毕了，redis 会自动删除 key，无需额外再次操作
+		return message.Res(200, "success")
+	case typeSet:
+		n, err := tmpClient.SCard(key).Result()
+		if err != nil {
+			fn(err.Error())
+			return message.Res(500, err.Error())
+		}
+		fn(fmt.Sprintf("about %d keys in hash key「%s」to del, job starting...", n, key))
+		var keys []string
+		fn(fmt.Sprintf("%d / %d keys to delete", n, n))
+		for {
+			keys, _, err = tmpClient.SScan(key, 0, "*", 10).Result()
+			if err != nil {
+				fn(err.Error())
+				return message.Res(500, err.Error())
+			}
+			for _, v := range keys {
+				_, err = tmpClient.SRem(key, v).Result()
+				if err != nil {
+					fn(err.Error())
+					return message.Res(500, err.Error())
+				}
+				log.FMTLog(log.LOGDEBUG, fmt.Sprintf("del 「%s」「%s」", key, v))
+			}
+			n2, err := tmpClient.SCard(key).Result()
+			if err != nil {
+				return message.Res(500, err.Error())
+			}
+			fn(fmt.Sprintf("%d / %d keys to delete", n2, n))
+			select {
+			case <-time.After(time.Microsecond * 100):
+			}
+			if n2 == 0 {
+				break
+			}
+		}
+		// 当为 set 的时候， 如果内置键删除完毕了，redis 会自动删除 key，无需额外再次操作
+		return message.Res(200, "success")
+	case typeList:
+		n, err := tmpClient.LLen(key).Result()
+		if err != nil {
+			fn(err.Error())
+			return message.Res(500, err.Error())
+		}
+		fn(fmt.Sprintf("about %d keys in hash key「%s」to del, job starting...", n, key))
+		fn(fmt.Sprintf("%d / %d keys to delete", n, n))
+		for {
+			for i := 0; i < 10; i++ {
+				_, err := tmpClient.LPop(key).Result()
+				if err != nil {
+					if err == redis.Nil {
+						break
+					} else {
+						fn(err.Error())
+						return message.Res(500, err.Error())
+					}
+				}
+			}
+			select {
+			case <-time.After(time.Microsecond * 100):
+			}
+			n2, err := tmpClient.LLen(key).Result()
+			if err != nil {
+				fn(err.Error())
+				return message.Res(500, err.Error())
+			}
+			fn(fmt.Sprintf("%d / %d keys to delete", n2, n))
+			if n2 == 0 {
+				break
+			}
+		}
+		// 当为 list 的时候， 如果内置键删除完毕了，redis 会自动删除 key，无需额外再次操作
+		return message.Res(200, "success")
+
+	default:
+		fn("failed unknow type: " + t)
+		return message.Res(500, t)
+	}
+}
+
+func init() {
+	// fmt.Println(SafeDel("10.0.6.48:6379", "test", 0, func(s string, i ...int64) {
+	// 	fmt.Println(s)
+	// }))
+	// DebugHtstats("10.0.6.49:6379", 0)
 }

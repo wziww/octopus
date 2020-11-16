@@ -2,10 +2,15 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"net/http"
+	_ "net/http/pprof"
 	"octopus/config"
 	"octopus/log"
 	_ "octopus/myredis"
+	_ "octopus/myredis/rdb"
+	"os"
+	"path"
 	"strings"
 	"syscall"
 	"time"
@@ -34,6 +39,39 @@ func (p *program) Start() error {
 			WriteTimeout: 5 * time.Second,
 			ReadTimeout:  5 * time.Second,
 		}
+		http.HandleFunc("/upload", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Add("Access-Control-Allow-Origin", "*")
+			w.Header().Add("Access-Control-Allow-Headers", "*")
+			w.Header().Add("Access-Control-Allow-Methods", "HEAD,PUT,POST,GET,DELETE,OPTIONS")
+			if r.Method == "OPTIONS" {
+				w.WriteHeader(http.StatusNoContent)
+				return
+			}
+			r.ParseMultipartForm(30 << 10)
+			file, header, err := r.FormFile("file")
+			if err != nil {
+				w.WriteHeader(500)
+				w.Write([]byte(err.Error()))
+				return
+			}
+			defer file.Close()
+			f, err := os.OpenFile(path.Join(config.C.RDB.Dir, header.Filename), os.O_CREATE|os.O_RDWR, 0666)
+			if err != nil {
+				w.WriteHeader(500)
+				w.Write([]byte(err.Error()))
+				return
+			}
+			defer f.Close()
+			_, err = io.Copy(f, file)
+			if err != nil {
+				w.WriteHeader(500)
+				w.Write([]byte(err.Error()))
+				return
+			}
+			w.WriteHeader(200)
+			w.Write([]byte("success"))
+			return
+		})
 		http.HandleFunc("/v1/websocket", func(w http.ResponseWriter, r *http.Request) {
 			ws(w, r)
 			return

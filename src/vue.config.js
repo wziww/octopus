@@ -1,5 +1,5 @@
 
-const { join, resolve } = require('path');
+const { join, resolve, } = require('path');
 // const CompressionWebpackPlugin = require('compression-webpack-plugin')
 // const zopfli = require('@gfx/zopfli')
 // const BrotliPlugin = require('brotli-webpack-plugin')
@@ -12,8 +12,8 @@ function addStyleResource(rule) {
     .loader('style-resources-loader')
     .options({
       patterns: [
-        resolve(__dirname, './src/assets/css/global.styl')
-      ]
+        resolve(__dirname, './src/assets/css/global.styl'),
+      ],
     });
 }
 module.exports = {
@@ -30,7 +30,7 @@ module.exports = {
       .parent
       .output
       .chunkFilename('js/[name].[contenthash].js');
-    const types = ['vue-modules', 'vue', 'normal-modules', 'normal'];
+    const types = ['vue-modules', 'vue', 'normal-modules', 'normal', ];
     types.forEach(type => addStyleResource(config.module.rule('stylus').oneOf(type)));
     // 开启比gzip体验更好的Zopfli压缩
   },
@@ -43,7 +43,7 @@ module.exports = {
       // jsencrypt: 'JSEncrypt',
       // vant: 'vant',
       // moment: 'moment'
-    }
+    },
   },
   // pluginOptions: {
   //   'style-resources-loader': {
@@ -66,7 +66,7 @@ module.exports = {
   devServer: {
     host: '0.0.0.0',
     https: false,
-    hotOnly: false
+    hotOnly: false,
     // proxy: 'http://dev.hahaipi.com'
     // proxy: {
     //   '/Home': {
@@ -78,5 +78,5 @@ module.exports = {
     //   // }
     //   }
     // }
-  }
+  },
 };

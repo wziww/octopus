@@ -6,19 +6,28 @@
     </pre>
     <div class="handleButton">
       <a-divider orientation="left">通用</a-divider>
-      <a-button class="eachHandle" @click="clearOutPut" type="primary">清屏</a-button>
-      <router-link class="eachHandle" :to="'/clusterSlots?id='+$route.query.id">
+      <a-button class="eachHandle" @click="clearOutPut" type="primary"
+        >清屏</a-button
+      >
+      <router-link
+        class="eachHandle"
+        :to="'/clusterSlots?id=' + $route.query.id"
+      >
         <a-button type="primary">集群列表</a-button>
       </router-link>
       <a-divider orientation="left">节点操作</a-divider>
       <a-tooltip
         placement="topLeft"
         title="<id> <ip:port> <flags> <master> <ping-sent> <pong-recv> <config-epoch> <link-state> <slot> <slot> ... <slot>"
-        style="float: left;"
+        style="float: left"
       >
-        <a-button class="eachHandle" @click="reloadClusterNodes" type="primary">刷新节点信息</a-button>
+        <a-button class="eachHandle" @click="reloadClusterNodes" type="primary"
+          >刷新节点信息</a-button
+        >
       </a-tooltip>
-      <a-button class="eachHandle" @click="clusterMeet" type="primary">添加节点</a-button>
+      <a-button class="eachHandle" @click="clusterMeet" type="primary"
+        >添加节点</a-button
+      >
       <a-drawer
         title="添加节点"
         placement="top"
@@ -32,12 +41,22 @@
         <div class="each-input">
           <a-input placeholder="port" @change="inputPort" />
         </div>
-        <a-popconfirm @confirm="confirmAddNode" :title="'确认添加节点['+newhost+':'+newport+']进入集群么？'">
+        <a-popconfirm
+          @confirm="confirmAddNode"
+          :title="'确认添加节点[' + newhost + ':' + newport + ']进入集群么？'"
+        >
           <a-icon slot="icon" type="question-circle-o" style="color: red" />
-          <a-button style="width: 30%;float: left;" class="submit" type="primary">提交</a-button>
+          <a-button
+            style="width: 30%; float: left"
+            class="submit"
+            type="primary"
+            >提交</a-button
+          >
         </a-popconfirm>
       </a-drawer>
-      <a-button class="eachHandle" @click="clusterForget" type="primary">删除节点</a-button>
+      <a-button class="eachHandle" @click="clusterForget" type="primary"
+        >删除节点</a-button
+      >
       <a-drawer
         title="删除节点"
         placement="top"
@@ -48,12 +67,22 @@
         <div class="each-input">
           <a-input placeholder="nodeid" @change="inputNodeID" />
         </div>
-        <a-popconfirm @confirm="confirmClusterForget" :title="'确认删除节点['+nodeid+']么？'">
+        <a-popconfirm
+          @confirm="confirmClusterForget"
+          :title="'确认删除节点[' + nodeid + ']么？'"
+        >
           <a-icon slot="icon" type="question-circle-o" style="color: red" />
-          <a-button style="width: 30%;float: left;" class="submit" type="primary">提交</a-button>
+          <a-button
+            style="width: 30%; float: left"
+            class="submit"
+            type="primary"
+            >提交</a-button
+          >
         </a-popconfirm>
       </a-drawer>
-      <a-button class="eachHandle" @click="clusterReplicate" type="primary">从节点分配</a-button>
+      <a-button class="eachHandle" @click="clusterReplicate" type="primary"
+        >从节点分配</a-button
+      >
       <a-drawer
         title="从节点分配"
         placement="top"
@@ -71,14 +100,143 @@
         <div class="each-input">
           <a-input placeholder="主节点 nodeid" @change="inputRepNodeID" />
         </div>
-        <a-popconfirm @confirm="confirmClusterReplicate" :title="'确认设置从节点么？'">
+        <a-popconfirm
+          @confirm="confirmClusterReplicate"
+          :title="'确认设置从节点么？'"
+        >
           <a-icon slot="icon" type="question-circle-o" style="color: red" />
-          <a-button style="width: 30%;float: left;" class="submit" type="primary">提交</a-button>
+          <a-button
+            style="width: 30%; float: left"
+            class="submit"
+            type="primary"
+            >提交</a-button
+          >
         </a-popconfirm>
       </a-drawer>
+      <a-button class="eachHandle" @click="safeDel" type="primary"
+        >KEY 安全删除操作</a-button
+      >
+      <a-drawer
+        title="KEY 安全删除操作"
+        placement="top"
+        @close="safeDelClose"
+        :closable="true"
+        :visible="safeDelShow"
+      >
+        <div class="each-input">
+          <a-input placeholder="address" @change="inputSafeDelKeyAddress" />
+        </div>
+        <div class="each-input">
+          <a-input placeholder="key" @change="inputSafeDelKey" />
+        </div>
+        <a-popconfirm
+          @confirm="confirmSafeDel"
+          :title="
+            '确认进行[' +
+            safeDelAddress +
+            '节点的 key:' +
+            safeDelKey +
+            ']删除操作？'
+          "
+        >
+          <a-icon slot="icon" type="question-circle-o" style="color: red" />
+          <a-button
+            style="width: 30%; float: left"
+            class="submit"
+            type="primary"
+            >提交</a-button
+          >
+        </a-popconfirm>
+      </a-drawer>
+
+      <a-button class="eachHandle" @click="nodeDebug" type="primary"
+        >节点内存分析</a-button
+      >
+      <a-drawer
+        title="节点内存分析"
+        placement="top"
+        @close="nodeDebugClose"
+        :closable="true"
+        :visible="nodeDebugShow"
+      >
+        <div class="each-input">
+          <a-input placeholder="host" @change="inputDebugHost" />
+        </div>
+        <div class="each-input">
+          <a-input placeholder="port" @change="inputDebugPort" />
+        </div>
+        <a-popconfirm
+          @confirm="confirmDebugNode"
+          :title="'确认查看节点[' + debugHost + ':' + debugPort + ']内存信息？'"
+        >
+          <a-icon slot="icon" type="question-circle-o" style="color: red" />
+          <a-button
+            style="width: 30%; float: left"
+            class="submit"
+            type="primary"
+            >提交</a-button
+          >
+        </a-popconfirm>
+      </a-drawer>
+      <a-divider orientation="left">rdb 操作</a-divider>
+      <a-button class="eachHandle" @click="rdbLS" type="primary"
+        >rdb ls</a-button
+      >
+      <a-button class="eachHandle" @click="rdbOpen" type="primary"
+        >rdb 文件分析</a-button
+      >
+      <a-drawer
+        title="rdb 文件分析"
+        placement="top"
+        @close="rdbClose"
+        :closable="true"
+        :visible="rdbShow"
+        height="350"
+      >
+        <div class="each-input">
+          <a-input placeholder="文件名" @change="inputRdbFileName" />
+        </div>
+        <div class="each-input">
+          <a-input placeholder="统计数量" @change="inputCount" />
+        </div>
+        <div class="each-input">
+          <a-input placeholder="大小偏移量限制" @change="inputOffset" />
+        </div>
+        <div class="each-input">
+          <a-input placeholder="子级数量限制" @change="inputChildSize" />
+        </div>
+        <a-popconfirm
+          @confirm="confirmRdb"
+          :title="'确认对文件[' + rdbFileName + ']进行分析？'"
+        >
+          <a-icon slot="icon" type="question-circle-o" style="color: red" />
+          <a-button
+            style="width: 30%; float: left"
+            class="submit"
+            type="primary"
+            >提交</a-button
+          >
+        </a-popconfirm>
+      </a-drawer>
+      <a-upload
+        class="eachHandle"
+        name="file"
+        :multiple="true"
+        :action="uploadAddress"
+        :headers="headers"
+        @change="handleChange"
+      >
+        <a-button> <a-icon type="upload" />点击上传文件</a-button>
+      </a-upload>
+
       <a-divider orientation="left">slots 操作</a-divider>
-      <a-button class="eachHandle" type="primary" @click="slotsStats">未分配 slots 计算</a-button>
-      <a-button class="eachHandle" @click="slotsSet" type="primary">slots 分配</a-button>
+
+      <a-button class="eachHandle" type="primary" @click="slotsStats"
+        >未分配 slots 计算</a-button
+      >
+      <a-button class="eachHandle" @click="slotsSet" type="primary"
+        >slots 分配</a-button
+      >
       <a-drawer
         title="slots 分配"
         placement="top"
@@ -88,23 +246,47 @@
         height="400"
       >
         <div class="each-input">
-          <a-input placeholder="需要设置为从节点的 host" @change="inputSlotsHost" />
+          <a-input
+            placeholder="需要设置为从节点的 host"
+            @change="inputSlotsHost"
+          />
         </div>
         <div class="each-input">
-          <a-input placeholder="需要设置为从节点的 port" @change="inputSlotsPort" />
+          <a-input
+            placeholder="需要设置为从节点的 port"
+            @change="inputSlotsPort"
+          />
         </div>
         <div class="each-input">
-          <a-input type="number" placeholder="slots 起（0-16383）" @change="inputSlotsStart" />
+          <a-input
+            type="number"
+            placeholder="slots 起（0-16383）"
+            @change="inputSlotsStart"
+          />
         </div>
         <div class="each-input">
-          <a-input type="number" placeholder="slots 止（0-16383）" @change="inputSlotsEnd" />
+          <a-input
+            type="number"
+            placeholder="slots 止（0-16383）"
+            @change="inputSlotsEnd"
+          />
         </div>
-        <a-popconfirm @confirm="confirmSlotsSet" :title="'确认进行 slots 分配？'">
+        <a-popconfirm
+          @confirm="confirmSlotsSet"
+          :title="'确认进行 slots 分配？'"
+        >
           <a-icon slot="icon" type="question-circle-o" style="color: red" />
-          <a-button style="width: 30%;float: left;" class="submit" type="primary">提交</a-button>
+          <a-button
+            style="width: 30%; float: left"
+            class="submit"
+            type="primary"
+            >提交</a-button
+          >
         </a-popconfirm>
       </a-drawer>
-      <a-button class="eachHandle" @click="slotsMig" type="primary">slots 迁移</a-button>
+      <a-button class="eachHandle" @click="slotsMig" type="primary"
+        >slots 迁移</a-button
+      >
       <a-drawer
         title="slots 迁移"
         placement="top"
@@ -120,14 +302,27 @@
           <a-input placeholder="目标节点" @change="inputSlotsMigTarget" />
         </div>
         <div class="each-input">
-          <a-input type="number" placeholder="slots 起（0-16383）" @change="inputSlotsMigStart" />
+          <a-input
+            type="number"
+            placeholder="slots 起（0-16383）"
+            @change="inputSlotsMigStart"
+          />
         </div>
         <div class="each-input">
-          <a-input type="number" placeholder="slots 止（0-16383）" @change="inputSlotsMigEnd" />
+          <a-input
+            type="number"
+            placeholder="slots 止（0-16383）"
+            @change="inputSlotsMigEnd"
+          />
         </div>
         <a-popconfirm @confirm="confirmSlotsMig" :title="'确认进行 slots 迁移'">
           <a-icon slot="icon" type="question-circle-o" style="color: red" />
-          <a-button style="width: 30%;float: left;" class="submit" type="primary">提交</a-button>
+          <a-button
+            style="width: 30%; float: left"
+            class="submit"
+            type="primary"
+            >提交</a-button
+          >
         </a-popconfirm>
       </a-drawer>
     </div>
@@ -156,15 +351,15 @@ export default {
         this.$route.query.id
     );
     const that = this;
-    ws.OnOpen(function() {
+    ws.OnOpen(() => {
       ws.SendObj({
         Func: "namespace",
         Data: JSON.stringify({
-          namespace: `dev-${that.$route.query.id}`
-        })
+          namespace: `dev-${that.$route.query.id}`,
+        }),
       });
     });
-    const handMessage = hd(function(d) {
+    const handMessage = hd((d) => {
       // 接受服务端数据
       let z = [];
       if (["token", "namespace"].indexOf(d.Type) !== -1) {
@@ -189,6 +384,45 @@ export default {
       }
       if (d.Type === "/redis/slots/migrating") {
         data.push("// slots 迁移");
+      }
+      if (d.Type === "/redis/rdb/analyze/0") {
+        const percent = Number(d.Data);
+        let str = "rdb 分析中:\n[";
+        const starsNum = parseInt((percent * 50) / 100);
+        for (let i = 0; i < starsNum; i++) {
+          str += "*";
+        }
+        for (let i = 0; i < 50 - starsNum; i++) {
+          str += "_";
+        }
+        str += "] " + percent + " %";
+        data = [str];
+        str += "\n";
+        d.Data = str;
+        if (lastTime + 100 < new Date().getTime() || status[1] === status[0]) {
+          lastTime = new Date().getTime();
+          that.data = d.Data;
+        }
+        return;
+      }
+      if (d.Type === "/redis/rdb/analyze" && typeof d.Data !== "string") {
+        let data = [];
+        data.push("rdb 分析结果:\n");
+        data.push("总键值对:" + d.Data.TotalNums + "\n");
+        data.push("过期键总数:" + d.Data.Expires + "\n");
+        data.push("已过期键总数:" + d.Data.AlreadyExpired + "\n");
+        data.push("缓存脚本数:" + d.Data.LuaNums + "\n");
+        data.push("大键 top " + d.Data.Count + " :(存储空间)\n");
+        for (let v of d.Data.OffSetLog) {
+          data.push(`key: ${v.Key}\nval: ${v.Val}\n`);
+        }
+        data.push("大键 top " + d.Data.Count + " :(子级数量)\n");
+        for (let v of d.Data.ChildLog) {
+          data.push(`key: ${v.Key}\nval: ${v.Val}\n`);
+        }
+        console.log(d.Data);
+        that.data = data.join("\n");
+        return;
       }
       if (d.Type === "/redis/slots/migrating/0") {
         const status = d.Data.split(" ");
@@ -265,18 +499,38 @@ export default {
         );
         d.Data = tmpArray.join("\n");
       }
+      if (d.Type === "/redis/debug/htstats") {
+        data.push("// debug htstats 0 参数说明:");
+        data.push("// [Dictionary HT] : 数据字典哈希表");
+        data.push("// [Expires HT]    : 过期 KV 字典哈希表");
+        data.push("// 每张哈希表至多附带两个子表，编号为 0，1");
+      }
+      if (d.Type === "/redis/rdb/ls") {
+        let data = ["rdb 文件列表:"];
+        if (d.Data) {
+          for (let v of d.Data) {
+            data.push(v);
+          }
+        }
+        that.data = data.join("\n");
+        return;
+      }
+      if (d.Type === "/redis/safe/del") {
+        data.push("// key 删除操作");
+      }
       if (typeof d.Data !== "string") {
         return;
       }
+
       z = d.Data.split("\n");
       data.push(
         ...z
-          .filter(e => {
+          .filter((e) => {
             if (e.replace(/\r|\n/g, "") !== "") {
               return e;
             }
           })
-          .map(e => {
+          .map((e) => {
             return e;
           })
       );
@@ -292,8 +546,22 @@ export default {
     ws.Open();
     ws.OnData(handMessage);
     return {
+      uploadAddress: config.Upload,
+      // rdb
+      rdbFileName: "",
+      rdbCount: "",
+      rdbOffset: "",
+      childSize: "",
+      // rdb
       data,
       clusterMeetShow: false,
+      nodeDebugShow: false,
+      safeDelKey: "",
+      safeDelAddress: "",
+      safeDelShow: false,
+      rdbShow: false,
+      debugHost: "",
+      debugPort: "",
       newhost: "",
       newport: "",
       clusterForgetShow: false,
@@ -311,11 +579,20 @@ export default {
       slotsMigSource: "",
       slotsMigTarget: "",
       slotsMigStart: "",
-      slotsMigEnd: ""
+      slotsMigEnd: "",
     };
   },
   methods: {
-    // slots add
+    handleChange(info) {
+      if (info.file.status !== "uploading") {
+        console.log(info.file, info.fileList);
+      }
+      if (info.file.status === "done") {
+        this.$message.success(`${info.file.name} file uploaded successfully`);
+      } else if (info.file.status === "error") {
+        this.$message.error(`${info.file.name} file upload failed.`);
+      }
+    },
     slotsSet() {
       this.slotsSetShow = true;
     },
@@ -342,8 +619,8 @@ export default {
           host: this.slotsHost,
           port: this.slotsPort,
           start: Number(this.slotsStart),
-          end: Number(this.slotsEnd)
-        })
+          end: Number(this.slotsEnd),
+        }),
       });
       this.slotsSetShow = false;
     },
@@ -374,20 +651,60 @@ export default {
           sourceId: this.slotsMigSource,
           TargetID: this.slotsMigTarget,
           slotsStart: Number(this.slotsMigStart),
-          slotsEnd: Number(this.slotsMigEnd)
-        })
+          slotsEnd: Number(this.slotsMigEnd),
+        }),
       });
       this.slotsMigShow = false;
+    },
+    rdbLS() {
+      ws.SendObj({
+        Func: "/redis/rdb/ls",
+      });
     },
     // slots stats
     slotsStats() {
       ws.SendObj({
         Func: "/redis/clusterSlots",
         Data: JSON.stringify({
-          id: this.$route.query.id
-        })
+          id: this.$route.query.id,
+        }),
       });
     },
+    confirmRdb() {
+      ws.SendObj({
+        Func: "/redis/rdb/analyze",
+        Data: JSON.stringify({
+          filename: this.rdbFileName,
+          count: Number(this.rdbCount),
+          offsetSize: Number(this.rdbOffset),
+          childSize: Number(this.childSize),
+        }),
+      });
+      this.rdbShow = false;
+    },
+    // debug htstats 0
+    confirmSafeDel() {
+      ws.SendObj({
+        Func: "/redis/safe/del",
+        Data: JSON.stringify({
+          address: this.safeDelAddress,
+          key: this.safeDelKey,
+        }),
+      });
+      this.safeDelShow = false;
+    },
+    // debug htstats 0
+    confirmDebugNode() {
+      ws.SendObj({
+        Func: "/redis/debug/htstats",
+        Data: JSON.stringify({
+          host: this.debugHost,
+          port: this.debugPort,
+        }),
+      });
+      this.nodeDebugShow = false;
+    },
+
     // cluster
     confirmClusterReplicate() {
       ws.SendObj({
@@ -396,8 +713,8 @@ export default {
           id: this.$route.query.id,
           host: this.repHost,
           port: this.repPort,
-          nodeid: this.repNodeID
-        })
+          nodeid: this.repNodeID,
+        }),
       });
       this.clusterReplicateShow = false;
     },
@@ -406,8 +723,8 @@ export default {
         Func: "/redis/clusterForget",
         Data: JSON.stringify({
           id: this.$route.query.id,
-          nodeid: this.nodeid
-        })
+          nodeid: this.nodeid,
+        }),
       });
       this.clusterForgetShow = false;
     },
@@ -417,8 +734,8 @@ export default {
         Data: JSON.stringify({
           id: this.$route.query.id,
           host: this.newhost,
-          port: this.newport
-        })
+          port: this.newport,
+        }),
       });
       this.clusterMeetShow = false;
     },
@@ -434,6 +751,32 @@ export default {
     inputNodeID(e) {
       this.nodeid = e.target.value;
     },
+    inputSafeDelKeyAddress(e) {
+      this.safeDelAddress = e.target.value;
+    },
+    inputSafeDelKey(e) {
+      this.safeDelKey = e.target.value;
+    },
+    // rdb
+    inputRdbFileName(e) {
+      this.rdbFileName = e.target.value;
+    },
+    inputCount(e) {
+      this.rdbCount = e.target.value;
+    },
+    inputOffset(e) {
+      this.rdbOffset = e.target.value;
+    },
+    inputChildSize(e) {
+      this.childSize = e.target.value;
+    },
+    // rdb
+    inputDebugHost(e) {
+      this.debugHost = e.target.value;
+    },
+    inputDebugPort(e) {
+      this.debugPort = e.target.value;
+    },
     inputHost(e) {
       this.newhost = e.target.value;
     },
@@ -442,6 +785,18 @@ export default {
     },
     clusterForgetClose() {
       this.clusterForgetShow = false;
+    },
+    safeDelClose() {
+      this.safeDelShow = false;
+    },
+    rdbOpen() {
+      this.rdbShow = true;
+    },
+    rdbClose() {
+      this.rdbShow = false;
+    },
+    nodeDebugClose() {
+      this.nodeDebugShow = false;
     },
     clusterMeetClose() {
       this.clusterMeetShow = false;
@@ -455,6 +810,12 @@ export default {
     clusterForget() {
       this.clusterForgetShow = true;
     },
+    safeDel() {
+      this.safeDelShow = true;
+    },
+    nodeDebug() {
+      this.nodeDebugShow = true;
+    },
     clusterMeet() {
       this.clusterMeetShow = true;
     },
@@ -465,9 +826,9 @@ export default {
     reloadClusterNodes() {
       ws.SendObj({
         Func: "/redis/clusterNodes",
-        Data: JSON.stringify({ id: this.$route.query.id })
+        Data: JSON.stringify({ id: this.$route.query.id }),
       });
-    }
+    },
   },
   beforeDestroy() {
     data = [];
@@ -476,7 +837,7 @@ export default {
       window.clearInterval(t);
     }
     ws.Close();
-  }
+  },
 };
 </script>
 <style lang="stylus" scoped>

@@ -14,12 +14,12 @@ const permissionAll = {
   // PERMISSIONDEV dev 运维模式
   PERMISSIONDEV: 1 << 1,
   // PERMISSIONEXEC 在线操作模式
-  PERMISSIONEXEC: 1 << 2
+  PERMISSIONEXEC: 1 << 2,
 };
 function clear() {
   localStorage.removeItem("token");
   localStorage.removeItem("permission");
 }
 export {
-  token, TokenSet, permission, PermissionSet, permissionAll, clear
+  token, TokenSet, permission, PermissionSet, permissionAll, clear,
 };

@@ -1,22 +1,44 @@
 <template>
   <div>
-    <div style="width: 100%;float: left;margin-bottom: 20px;">
-      <span class="each-chose" style="font-size: 20px;font-weight: border;">Refresh Every :</span>
-      <a-button class="each-chose" :type="index[0]" @click="chose(0)">1 s</a-button>
-      <a-button class="each-chose" :type="index[1]" @click="chose(1)">10 s</a-button>
-      <a-button class="each-chose" :type="index[2]" @click="chose(2)">30 s</a-button>
-      <a-button class="each-chose" :type="index[3]" @click="chose(3)">1 min</a-button>
-      <a-button class="each-chose" :type="index[4]" @click="chose(4)">5 min</a-button>
-      <a-button class="each-chose" :type="index[5]" @click="chose(5)">10 min</a-button>
+    <div style="width: 100%; float: left; margin-bottom: 20px">
+      <span class="each-chose" style="font-size: 20px; font-weight: border"
+        >Refresh Every :</span
+      >
+      <a-button class="each-chose" :type="index[0]" @click="chose(0)"
+        >1 s</a-button
+      >
+      <a-button class="each-chose" :type="index[1]" @click="chose(1)"
+        >10 s</a-button
+      >
+      <a-button class="each-chose" :type="index[2]" @click="chose(2)"
+        >30 s</a-button
+      >
+      <a-button class="each-chose" :type="index[3]" @click="chose(3)"
+        >1 min</a-button
+      >
+      <a-button class="each-chose" :type="index[4]" @click="chose(4)"
+        >5 min</a-button
+      >
+      <a-button class="each-chose" :type="index[5]" @click="chose(5)"
+        >10 min</a-button
+      >
     </div>
-    <ve-line style="width: 50%;float: left;" :data="lineChartData" :settings="lineChartSettings"></ve-line>
+    <ve-line
+      style="width: 50%; float: left"
+      :data="lineChartData"
+      :settings="lineChartSettings"
+    ></ve-line>
     <ve-liquidfill
-      style="width: 50%;float: left;"
+      style="width: 50%; float: left"
       radius="50%;"
       :data="chartData"
       :settings="chartSettings"
     ></ve-liquidfill>
-    <ve-line style="width: 50%;float: left;" :data="statsData" :settings="statsSettings"></ve-line>
+    <ve-line
+      style="width: 50%; float: left"
+      :data="statsData"
+      :settings="statsSettings"
+    ></ve-line>
   </div>
 </template>
 <script>
@@ -43,13 +65,13 @@ export default {
       area: true,
       scale: [true, true],
       yAxisName: ["M"],
-      xAxisName: ["时间"]
+      xAxisName: ["时间"],
     };
     this.statsSettings = {
       area: true,
       scale: [true, true],
       yAxisName: ["value"],
-      xAxisName: ["时间"]
+      xAxisName: ["时间"],
     };
     this.chartSettings = {
       seriesMap: {
@@ -57,12 +79,12 @@ export default {
           radius: "40%",
           center: ["20%", "30%"],
           itemStyle: {
-            opacity: 0.2
+            opacity: 0.2,
           },
           emphasis: {
             itemStyle: {
-              opacity: 0.5
-            }
+              opacity: 0.5,
+            },
           },
           backgroundStyle: {},
           label: {
@@ -70,21 +92,21 @@ export default {
               const { seriesName, value } = options;
               return `${seriesName}\n${(value * 100).toFixed(2)}%`;
             },
-            fontSize: 20
-          }
-        }
-      }
+            fontSize: 20,
+          },
+        },
+      },
     };
     const that = this;
     t = setInterval(() => {
       try {
         ws.SendObj({
           Func: "/redis/detail",
-          Data: JSON.stringify({ id: that.$route.query.id })
+          Data: JSON.stringify({ id: that.$route.query.id }),
         });
         ws.SendObj({
           Func: "/redis/stats",
-          Data: JSON.stringify({ id: that.$route.query.id })
+          Data: JSON.stringify({ id: that.$route.query.id }),
         });
       } catch (e) {
         console.error(e);
@@ -92,7 +114,7 @@ export default {
     }, interTime);
     ws.Close();
     ws.OnData(
-      hd(d => {
+      hd((d) => {
         if (d.Type === "/redis/detail") {
           let UsedMemoryTotal = 0;
           // let TotalSystemMemoryTotal = 0;
@@ -107,16 +129,16 @@ export default {
           }
           timeData.push({
             t: that.$moment().format("hh:mm:ss"),
-            memory_total: (UsedMemoryTotal / 1024 / 1024).toFixed(2)
+            memory_total: (UsedMemoryTotal / 1024 / 1024).toFixed(2),
           });
           chartData = {
             columns: ["key", "percent"],
             rows: [
               {
                 key: "内存使用量",
-                percent: (UsedMemoryTotal / Maxmemory).toFixed(4)
-              }
-            ]
+                percent: (UsedMemoryTotal / Maxmemory).toFixed(4),
+              },
+            ],
           };
           that.chartData = chartData;
         }
@@ -136,7 +158,7 @@ export default {
             t: that.$moment().format("hh:mm:ss"),
             output_Kbps: InstantaneousOutputKbps,
             input_Kbps: InstantaneousInputKbps,
-            Ops: InstantaneousOpsPerSec
+            Ops: InstantaneousOpsPerSec,
           });
         }
       })
@@ -147,13 +169,13 @@ export default {
       interTime,
       lineChartData: {
         columns: ["t", "memory_total"],
-        rows: timeData
+        rows: timeData,
       },
       index,
       statsData: {
         columns: ["t", "output_Kbps", "input_Kbps", "Ops"],
-        rows: statsDataT
-      }
+        rows: statsDataT,
+      },
     };
   },
   beforeDestroy() {
@@ -171,7 +193,7 @@ export default {
         "default",
         "default",
         "default",
-        "default"
+        "default",
       ];
       index[x] = "primary";
       this.index = index;
@@ -181,13 +203,13 @@ export default {
           this.interTime = interTime;
           window.clearInterval(t);
           t = setInterval(() => {
-            this.$socket.sendObj({
+            ws.sendObj({
               Func: "/redis/detail",
-              Data: JSON.stringify({ id: that.$route.query.id })
+              Data: JSON.stringify({ id: that.$route.query.id }),
             });
-            this.$socket.sendObj({
+            ws.sendObj({
               Func: "/redis/stats",
-              Data: JSON.stringify({ id: that.$route.query.id })
+              Data: JSON.stringify({ id: that.$route.query.id }),
             });
           }, interTime);
           break;
@@ -196,13 +218,13 @@ export default {
           this.interTime = interTime;
           window.clearInterval(t);
           t = setInterval(() => {
-            this.$socket.sendObj({
+            ws.sendObj({
               Func: "/redis/detail",
-              Data: JSON.stringify({ id: that.$route.query.id })
+              Data: JSON.stringify({ id: that.$route.query.id }),
             });
-            this.$socket.sendObj({
+            ws.sendObj({
               Func: "/redis/stats",
-              Data: JSON.stringify({ id: that.$route.query.id })
+              Data: JSON.stringify({ id: that.$route.query.id }),
             });
           }, interTime);
           break;
@@ -211,13 +233,13 @@ export default {
           this.interTime = interTime;
           window.clearInterval(t);
           t = setInterval(() => {
-            this.$socket.sendObj({
+            ws.sendObj({
               Func: "/redis/detail",
-              Data: JSON.stringify({ id: that.$route.query.id })
+              Data: JSON.stringify({ id: that.$route.query.id }),
             });
-            this.$socket.sendObj({
+            ws.sendObj({
               Func: "/redis/stats",
-              Data: JSON.stringify({ id: that.$route.query.id })
+              Data: JSON.stringify({ id: that.$route.query.id }),
             });
           }, interTime);
           break;
@@ -226,13 +248,13 @@ export default {
           this.interTime = interTime;
           window.clearInterval(t);
           t = setInterval(() => {
-            this.$socket.sendObj({
+            ws.sendObj({
               Func: "/redis/detail",
-              Data: JSON.stringify({ id: that.$route.query.id })
+              Data: JSON.stringify({ id: that.$route.query.id }),
             });
-            this.$socket.sendObj({
+            ws.sendObj({
               Func: "/redis/stats",
-              Data: JSON.stringify({ id: that.$route.query.id })
+              Data: JSON.stringify({ id: that.$route.query.id }),
             });
           }, interTime);
           break;
@@ -241,13 +263,13 @@ export default {
           this.interTime = interTime;
           window.clearInterval(t);
           t = setInterval(() => {
-            this.$socket.sendObj({
+            ws.sendObj({
               Func: "/redis/detail",
-              Data: JSON.stringify({ id: that.$route.query.id })
+              Data: JSON.stringify({ id: that.$route.query.id }),
             });
-            this.$socket.sendObj({
+            ws.sendObj({
               Func: "/redis/stats",
-              Data: JSON.stringify({ id: that.$route.query.id })
+              Data: JSON.stringify({ id: that.$route.query.id }),
             });
           }, interTime);
           break;
@@ -256,19 +278,19 @@ export default {
           this.interTime = interTime;
           window.clearInterval(t);
           t = setInterval(() => {
-            this.$socket.sendObj({
+            ws.sendObj({
               Func: "/redis/detail",
-              Data: JSON.stringify({ id: that.$route.query.id })
+              Data: JSON.stringify({ id: that.$route.query.id }),
             });
-            this.$socket.sendObj({
+            ws.sendObj({
               Func: "/redis/stats",
-              Data: JSON.stringify({ id: that.$route.query.id })
+              Data: JSON.stringify({ id: that.$route.query.id }),
             });
           }, interTime);
           break;
       }
     },
-    split: str => {
+    split: (str) => {
       if (typeof str !== "string") return [];
       const len = str.length;
       const arr = [];
@@ -276,8 +298,8 @@ export default {
         arr.push(str.substr(i, 10));
       }
       return arr;
-    }
-  }
+    },
+  },
 };
 </script>
 <style lang="stylus" scoped>

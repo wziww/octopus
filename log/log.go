@@ -5,6 +5,7 @@ import (
 	"octopus/config"
 	"os"
 	"path"
+	"runtime/debug"
 	"sync"
 	"time"
 )
@@ -103,6 +104,7 @@ func FMTLog(level int, strs ...interface{}) {
 		switch level {
 		case LOGERROR:
 			strs[0] = "[LOGERROR]"
+			strs = append(strs, string(debug.Stack()))
 		case LOGWARN:
 			strs[0] = "[LOGWARN]"
 		case LOGDEBUG:

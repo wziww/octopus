@@ -1,14 +1,21 @@
-import { Error404 } from './base';
+import { Error404, } from './base';
 import common from '../common/common';
-import { SettingPage, RedisPage, RedisMonit, RedisMonitMain, RedisDev, RedisOpcap } from './modules/setting';
+import {
+  SettingPage,
+  RedisPage,
+  RedisMonit,
+  RedisMonitMain,
+  RedisDev,
+  RedisOpcap,
+} from './modules/setting';
 export default [
   {
     path: '/login',
     name: 'login',
     component: () => import('@v/login/login.vue'),
     meta: {
-      title: 'octopus'
-    }
+      title: 'octopus',
+    },
   },
   {
     path: '/',
@@ -20,7 +27,7 @@ export default [
       RedisMonitMain,
       RedisDev,
       RedisOpcap,
-      Error404
-    ]
-  }
+      Error404,
+    ],
+  },
 ];

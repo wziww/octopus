@@ -16,10 +16,22 @@ var C *Config
 type Config struct {
 	Server     *Server       `toml:"server"`
 	Redis      []RedisDetail `toml:"redis"`
+	RDB        RDB           `toml:"rdb"`
+	DB         DB            `toml:"db"`
 	Log        *Log
 	Auth       []Auth     `toml:"auth"`
 	AuthConfig AuthConfig `toml:"auth-config"`
 	Opcap      *Opcap     `toml:"opcap"`
+}
+
+// RDB rdb 相关配置
+type RDB struct {
+	Dir string `toml:"dir"`
+}
+
+// DB 落盘配置
+type DB struct {
+	Address string `toml:"address"`
 }
 
 // Log 日志配置
@@ -70,5 +82,9 @@ func init() {
 		}
 		C = &Config{}
 		toml.Decode(string(fdata), C)
+	}
+	_, err := os.Stat(C.RDB.Dir)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s", err.Error())
 	}
 }

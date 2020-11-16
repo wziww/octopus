@@ -1,28 +1,44 @@
 [server]
-  listen_address="0.0.0.0:8081" # websocket port
+listen_address = "0.0.0.0:8089" # websocket port
+
+[db]
+address = "./octopus.db"
+
+[rdb]
+dir = "/path-to-rdb-save-dir"
+
 [[redis]]
-  name="impress"
-  address=["0.0.0.0:6379"]
-  # password="viewer"
+name = "impress"
+address = ["10.0.6.49:6379"]
+
+# password="viewer"
 [log]
-  # log_path="./tmp/"  # 日志存放目录,需人为创建好目录，不设置该值的时候，默认 stdout 进行日志输出
-  log_level=["LOGERROR","LOGWARN"] # LOGNONE 「禁止输出」 |  LOGERROR「错误级别日志」  |  LOGWARN「警告级别」  |  LOGDEBUG「debug 级别，该级别包含大量日志（含所有操作命令记录），谨慎使用」    默认 LOGERROR
+# log_path="./tmp/"  # 日志存放目录,需人为创建好目录，不设置该值的时候，默认 stdout 进行日志输出
+log_level = [
+  "LOGWARN",
+  "LOGERROR",
+  # "LOGDEBUG",
+
+] # LOGNONE 「禁止输出」 |  LOGERROR「错误级别日志」  |  LOGWARN「警告级别」  |  LOGDEBUG「debug 级别，该级别包含大量日志（含所有操作命令记录），谨慎使用」    默认 LOGERROR
+
 [auth-config]
-  key="F$&&*F*J)"
+key = "F$&&*F*J)"
+
 [[auth]]
-  user="root"
-  password="root"
-  # dev | monit | exec
-  permission=["dev","monit","exec"]  
+user = "root"
+password = "root"
+# dev | monit | exec
+permission = ["dev", "monit", "exec"]
+
 [[auth]]
-  user="viewer"
-  password="viewer"
-  # dev | monit | exec
-  permission=[]  
+user = "viewer"
+password = "viewer"
+# dev | monit | exec
+permission = ["monit"]
+
 [prometheus]
-  path="/prometheus"
+path = "/prometheus"
 
 [opcap]
-  device="en0"
-  BPFFilter="host 10.0.6.29 and dst port 8080" # http://www.tcpdump.org/manpages/pcap-filter.7.html
-
+device = "en0"
+BPFFilter = "host 10.0.6.29 and dst port 8080" # http://www.tcpdump.org/manpages/pcap-filter.7.html

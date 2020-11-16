@@ -1,13 +1,27 @@
 <template>
   <div>
-    <div style="width: 80%;float: left;margin-bottom: 20px;">
-      <span class="each-chose" style="font-size: 20px;font-weight: border;">Refresh Every :</span>
-      <a-button class="each-chose" :type="index[0]" @click="chose(0)">1 s</a-button>
-      <a-button class="each-chose" :type="index[1]" @click="chose(1)">10 s</a-button>
-      <a-button class="each-chose" :type="index[2]" @click="chose(2)">30 s</a-button>
-      <a-button class="each-chose" :type="index[3]" @click="chose(3)">1 min</a-button>
-      <a-button class="each-chose" :type="index[4]" @click="chose(4)">5 min</a-button>
-      <a-button class="each-chose" :type="index[5]" @click="chose(5)">10 min</a-button>
+    <div style="width: 80%; float: left; margin-bottom: 20px">
+      <span class="each-chose" style="font-size: 20px; font-weight: border"
+        >Refresh Every :</span
+      >
+      <a-button class="each-chose" :type="index[0]" @click="chose(0)"
+        >1 s</a-button
+      >
+      <a-button class="each-chose" :type="index[1]" @click="chose(1)"
+        >10 s</a-button
+      >
+      <a-button class="each-chose" :type="index[2]" @click="chose(2)"
+        >30 s</a-button
+      >
+      <a-button class="each-chose" :type="index[3]" @click="chose(3)"
+        >1 min</a-button
+      >
+      <a-button class="each-chose" :type="index[4]" @click="chose(4)"
+        >5 min</a-button
+      >
+      <a-button class="each-chose" :type="index[5]" @click="chose(5)"
+        >10 min</a-button
+      >
       <a-button type="primary" @click="showDrawer">设置</a-button>
     </div>
     <div class="each-chart">
@@ -26,7 +40,11 @@
       @close="onClose"
       :visible="visible"
     >
-      <a-checkbox-group :options="plainOptions" v-model="checkedList" @change="onChange" />
+      <a-checkbox-group
+        :options="plainOptions"
+        v-model="checkedList"
+        @change="onChange"
+      />
     </a-drawer>
   </div>
 </template>
@@ -44,7 +62,7 @@ let index = ["primary", "default", "default", "default", "default", "default"];
 let t = null;
 let checkedList = JSON.parse(localStorage.getItem("checkedList")) || [
   "get",
-  "set"
+  "set",
 ];
 export default {
   name: "setting_redis",
@@ -56,14 +74,14 @@ export default {
         try {
           ws.SendObj({
             Func: "/opcap",
-            Data: JSON.stringify({ address: that.$route.query.address })
+            Data: JSON.stringify({ address: that.$route.query.address }),
           });
         } catch (e) {
           console.error(e);
         }
       }, interTime);
     });
-    const handMessage = hd(d => {
+    const handMessage = hd((d) => {
       if (d.Type === "/opcap") {
         let tmpD = [];
         if (d.Data && typeof d.Data === "string") {
@@ -72,7 +90,7 @@ export default {
         for (let i = 0; i < d.Data.length; i += 2) {
           tmpD.push({
             命令: d.Data[i],
-            次数: d.Data[i + 1]
+            次数: d.Data[i + 1],
           });
         }
         if (timeData.length >= 20) {
@@ -81,7 +99,7 @@ export default {
         const columns = ["t"];
         const t = that.$moment().format("hh:mm:ss");
         const obj = {
-          t
+          t,
         };
         let _tmpD = [];
         for (let i = 0; i < tmpD.length; i++) {
@@ -94,11 +112,11 @@ export default {
         timeData.push(obj);
         that.lineChartData = {
           columns,
-          rows: timeData
+          rows: timeData,
         };
         that.data = {
           columns: ["命令", "次数"],
-          rows: _tmpD
+          rows: _tmpD,
         };
       }
     });
@@ -107,7 +125,7 @@ export default {
       area: false,
       scale: [true, true],
       yAxisName: ["value"],
-      xAxisName: ["时间"]
+      xAxisName: ["时间"],
     };
     return {
       lineChartData: {},
@@ -224,10 +242,10 @@ export default {
         // ttl
         "expire",
         "expireat",
-        "ttl"
+        "ttl",
       ],
       visible: false,
-      index
+      index,
     };
   },
   methods: {
@@ -250,7 +268,7 @@ export default {
         "default",
         "default",
         "default",
-        "default"
+        "default",
       ];
       index[x] = "primary";
       this.index = index;
@@ -263,7 +281,7 @@ export default {
             try {
               ws.SendObj({
                 Func: "/opcap",
-                Data: JSON.stringify({ address: that.$route.query.address })
+                Data: JSON.stringify({ address: that.$route.query.address }),
               });
             } catch (e) {
               console.error(e);
@@ -278,7 +296,7 @@ export default {
             try {
               ws.SendObj({
                 Func: "/opcap",
-                Data: JSON.stringify({ address: that.$route.query.address })
+                Data: JSON.stringify({ address: that.$route.query.address }),
               });
             } catch (e) {
               console.error(e);
@@ -293,7 +311,7 @@ export default {
             try {
               ws.SendObj({
                 Func: "/opcap",
-                Data: JSON.stringify({ address: that.$route.query.address })
+                Data: JSON.stringify({ address: that.$route.query.address }),
               });
             } catch (e) {
               console.error(e);
@@ -308,7 +326,7 @@ export default {
             try {
               ws.SendObj({
                 Func: "/opcap",
-                Data: JSON.stringify({ address: that.$route.query.address })
+                Data: JSON.stringify({ address: that.$route.query.address }),
               });
             } catch (e) {
               console.error(e);
@@ -323,7 +341,7 @@ export default {
             try {
               ws.SendObj({
                 Func: "/opcap",
-                Data: JSON.stringify({ address: that.$route.query.address })
+                Data: JSON.stringify({ address: that.$route.query.address }),
               });
             } catch (e) {
               console.error(e);
@@ -338,7 +356,7 @@ export default {
             try {
               ws.SendObj({
                 Func: "/opcap",
-                Data: JSON.stringify({ address: that.$route.query.address })
+                Data: JSON.stringify({ address: that.$route.query.address }),
               });
             } catch (e) {
               console.error(e);
@@ -347,7 +365,7 @@ export default {
           break;
       }
     },
-    split: str => {
+    split: (str) => {
       if (typeof str !== "string") return [];
       const len = str.length;
       const arr = [];
@@ -355,14 +373,14 @@ export default {
         arr.push(str.substr(i, 10));
       }
       return arr;
-    }
+    },
   },
   beforeDestroy() {
     ws.Close();
     if (t !== null) {
       window.clearInterval(t);
     }
-  }
+  },
 };
 </script>
 <style lang="stylus" scoped>

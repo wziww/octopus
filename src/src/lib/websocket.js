@@ -1,11 +1,14 @@
-import { message } from 'ant-design-vue';
 import { token } from './token';
+import { message, } from 'ant-design-vue';
+
 const CLOSED = 0;
 const CONNECTED = 1;
 const ERROR = -1;
+const CONNECTING = 2;
+let handle;
 class WS {
   constructor(url, obj = {
-    reconnect: true
+    reconnect: true,
   }) {
     if (url.startsWith("ws")) {
       console.log("yes");
@@ -38,9 +41,18 @@ class WS {
     this.$onmessage = [];
   }
   Open() {
+    if (this.$socketStatus === CONNECTED || this.$socketStatus === CONNECTING) return;
+    handle = setTimeout(() => {
+      if (this.$socketStatus === CONNECTING) {
+        this.$socket.close();
+        this.$socketStatus = ERROR;
+        this.Open();
+      }
+    }, 1000*5);
+    this.$socketStatus = CONNECTING
     this.$socket = new WebSocket(this.$url);
-    this.$socket.onclose = this._initOnClose();
     this.$socket.onopen = this._initOnOpen();
+    this.$socket.onclose = this._initOnClose();
     this.$socket.onerror = this._initOnError();
     this.$socket.onmessage = this._initOnMessage();
   }
@@ -72,19 +84,25 @@ class WS {
   }
   SendObj(d) {
     if (!this.$socket) return;
-    this.$socket.send(JSON.stringify(d));
+    try {
+      this.$socket.send(JSON.stringify(d));
+    } catch (e) {
+      this.Open();
+    }
   }
   _initOnClose(e) {
-    this.$socketStatus = CLOSED;
     const that = this;
     return (e) => {
+      if (this.$socketStatus !== CONNECTED) { return; }
+      message.error("ws 已断开!");
+      this.$socketStatus = CLOSED;
       that._onclose(e);
       for (let i = 0; i < that.$onclose.length; i++) {
         if (typeof that.$onclose[i] === 'function') {
           that.$onclose[i](e);
         }
       }
-      that._clean();
+      // that._clean();
     };
   }
   _initOnOpen() {
@@ -94,8 +112,8 @@ class WS {
       this.SendObj({
         Func: "token",
         Data: JSON.stringify({
-          token
-        })
+          token,
+        }),
       });
       message.success("ws 成功连接!");
       for (let i = 0; i < that.$onopen.length; i++) {
@@ -108,12 +126,14 @@ class WS {
   _initOnError(e) {
     const that = this;
     return () => {
+      if (this.$socketStatus == CONNECTING) return;
       this.$socketStatus = ERROR;
       for (let i = 0; i < that.$onerror.length; i++) {
         if (typeof that.$onerror[i] === 'function') {
           that.$onerror[i](e);
         }
       }
+      this.Open();
     };
   }
   _initOnMessage(d) {

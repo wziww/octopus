@@ -4,9 +4,9 @@ const Error404 = {
   name: 'error_404',
   component: () => import('@v/error-page/error-404.vue'),
   meta: {
-    title: '404'
-  }
+    title: '404',
+  },
 };
 export {
-  Error404
+  Error404,
 };

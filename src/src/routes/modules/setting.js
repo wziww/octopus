@@ -1,11 +1,14 @@
+/**
+ * redis part
+ */
 const RedisOpcap = {
   path: '/opcap',
   name: 'setting_node_opcap',
   component: () => import('@v/redis/opcap.vue'),
   meta: {
     title: 'redis-opcap',
-    Index: '1'
-  }
+    Index: '1',
+  },
 };
 const RedisDev = {
   path: '/redis_dev',
@@ -13,8 +16,8 @@ const RedisDev = {
   component: () => import('@v/redis/dev.vue'),
   meta: {
     title: '数据源-运维模式',
-    Index: '1'
-  }
+    Index: '1',
+  },
 };
 const RedisMonit = {
   path: '/clusterSlots',
@@ -22,8 +25,8 @@ const RedisMonit = {
   component: () => import('@v/redis/clusterSlots.vue'),
   meta: {
     title: '数据源-节点列表',
-    Index: '1'
-  }
+    Index: '1',
+  },
 };
 const RedisMonitMain = {
   path: '/redis_monit_main',
@@ -31,8 +34,8 @@ const RedisMonitMain = {
   component: () => import('@v/redis/monit_main.vue'),
   meta: {
     title: '数据源-实时监控',
-    Index: '1'
-  }
+    Index: '1',
+  },
 };
 const RedisPage = {
   path: '/redis',
@@ -40,8 +43,8 @@ const RedisPage = {
   component: () => import('@v/redis/redis.vue'),
   meta: {
     title: '数据源-redis-列表',
-    Index: '1'
-  }
+    Index: '1',
+  },
 };
 const SettingPage = {
   path: '',
@@ -49,8 +52,8 @@ const SettingPage = {
   component: () => import('@v/index.vue'),
   meta: {
     title: '数据源',
-    Index: '1'
-  }
+    Index: '1',
+  },
 };
 export {
   SettingPage,
@@ -58,5 +61,6 @@ export {
   RedisMonit,
   RedisMonitMain,
   RedisDev,
-  RedisOpcap
+  RedisOpcap,
+  // dns
 };
