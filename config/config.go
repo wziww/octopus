@@ -78,13 +78,15 @@ func init() {
 	if C == nil {
 		fdata, openError := ioutil.ReadFile(*configPath)
 		if openError != nil {
-			fmt.Fprintf(os.Stderr, "%s", openError.Error())
+			fmt.Fprintf(os.Stderr, "%s\n", openError.Error())
+			os.Exit(1)
 		}
 		C = &Config{}
 		toml.Decode(string(fdata), C)
 	}
 	_, err := os.Stat(C.RDB.Dir)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s", err.Error())
+		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+		os.Exit(1)
 	}
 }
