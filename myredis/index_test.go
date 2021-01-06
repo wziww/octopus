@@ -8,7 +8,9 @@ import (
 	"octopus/message"
 	"octopus/permission"
 	"os"
+	"strings"
 	"testing"
+	"time"
 )
 
 func TestGetFromRDSStr(t *testing.T) {
@@ -73,5 +75,35 @@ func TestCluster(t *testing.T) {
 	}
 	if len(GetDetailObj(testID)) != nodeNum {
 		t.Fatalf("%s\n", "GetDetailObj error")
+	}
+	z := GetDetailObj(testID)
+	var tmp *DetailResult
+	for _, v := range z {
+		if strings.Index(v.ROLE, "master") == -1 { // 使用 slave 节点进行单元测试
+			tmp = v
+			goto next
+		}
+	}
+	t.Fatal("cant find slave node to forget")
+next:
+	t.Log(ClusterForget(testID, tmp.ID), "\n")
+	if len(GetDetailObj(testID)) != nodeNum-1 {
+		t.Fatalf("%s\n", "ClusterForget error")
+	}
+	addr := strings.Split(tmp.ADDR, ":")
+	t.Log(ClusterMeet(testID, addr[0], strings.Split(addr[1], "@")[0]), "\n") // 高版本兼容
+	select {
+	case <-time.After(time.Second * 5): // wait cluster info sync
+	}
+	if len(GetDetailObj(testID)) != nodeNum {
+		t.Fatalf("%s\n", "ClusterMeet error")
+	}
+	// 集群加入非法节点测试
+	if ClusterMeet("t", "", "") != message.Res(404001, "error") {
+		t.Fatal("ClusterMeet 非法集群操作异常")
+	}
+	ClusterMeet(testID, "0.0.0.0", "9999")
+	if len(GetDetailObj(testID)) != nodeNum {
+		t.Fatal("ClusterMeet 非法节点操作异常")
 	}
 }
