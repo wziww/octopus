@@ -12,3 +12,6 @@ a.out*
 /cpp/a*
 /cpp/opcap
 .vscode*
+
+cover.out
+cover.html

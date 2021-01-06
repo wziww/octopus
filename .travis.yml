@@ -3,3 +3,7 @@ language: go
 go:
   - 1.14.x
   - 1.15.x
+
+after_success:
+  - make cover
+  - bash <(curl -s https://codecov.io/bash)
