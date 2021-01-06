@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.com/wziww/octopus.svg?branch=master)](https://travis-ci.com/wziww/octopus)
 ### TODO LIST
 - [ ] es 集群操作及监控
 - [ ] mysql 监控及操作
