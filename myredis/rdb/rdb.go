@@ -9,13 +9,13 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"octopus/internal"
 	"octopus/log"
 	"octopus/message"
 	"os"
 	"sort"
 	"strconv"
 	"sync/atomic"
-	"time"
 )
 
 /*
@@ -629,7 +629,7 @@ func Analyze(filePath string, offsetSize, childSize, count int64, fn func(string
 		log.FMTLog(log.LOGERROR, errStr)
 		return message.Res(500, errStr)
 	}
-	now := time.Now().UnixNano() / 1e6
+	now := internal.Now().UnixNano() / 1e6
 	var expiretime int64 = -1
 	var percent float32 = 0.00
 	for {
