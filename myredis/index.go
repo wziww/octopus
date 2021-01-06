@@ -201,7 +201,7 @@ func ClusterForget(id string, nodeid string) string {
 	case *redis.ClusterClient:
 		z := redisSources.Get(id).self.(*redis.ClusterClient)
 		err := z.ForEachNode(func(c *redis.Client) error {
-			_, err := z.ClusterForget(nodeid).Result()
+			_, err := c.ClusterForget(nodeid).Result()
 			if err != nil {
 				log.FMTLog(log.LOGWARN, err)
 			}
