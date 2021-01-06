@@ -55,10 +55,19 @@ func TestCluster(t *testing.T) {
 	if len(_getServer(testID)) != 6 {
 		t.Fatalf("%s\n", "_getServer error")
 	}
+	if len(_getServer("testID")) != 0 {
+		t.Fatalf("%s\n", "_getServer error")
+	}
 	if GetServer(testID) == "" {
 		t.Fatalf("%s\n", "GetServer error")
 	}
 	if GetServer("testID") != "" {
 		t.Fatalf("%s\n", "GetServer error")
+	}
+	if ClusterSlotsStats(testID) == "" {
+		t.Fatalf("%s\n", "ClusterSlotsStats error")
+	}
+	if len(GetDetailObj(testID)) != 6 {
+		t.Fatalf("%s\n", "GetDetailObj error")
 	}
 }
