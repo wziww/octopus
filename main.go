@@ -36,8 +36,8 @@ func (p *program) Start() error {
 		log.FMTLog(log.LOGWARN, "HTTP start at "+config.C.Server.ListenAddress)
 		server := &http.Server{
 			Addr:         config.C.Server.ListenAddress,
-			WriteTimeout: 5 * time.Second,
-			ReadTimeout:  5 * time.Second,
+			WriteTimeout: 60 * time.Second,
+			ReadTimeout:  60 * time.Second,
 		}
 		http.HandleFunc("/upload", func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Add("Access-Control-Allow-Origin", "*")
