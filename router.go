@@ -31,7 +31,9 @@ func Router(path string, mode int, r routerExec) {
 		permission: mode,
 	}
 }
-func init() {
+
+// RouterInit ...
+func RouterInit() {
 	routerAll = make(map[string]*router)
 	Router("token", permission.PERMISSIONNONE, func(data string, conns ...*oSocket) string {
 		body := &struct {

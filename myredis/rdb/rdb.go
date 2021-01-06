@@ -783,5 +783,3 @@ end:
 	fn("100", 0)
 	return message.Res(200, result)
 }
-func init() {
-}

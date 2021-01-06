@@ -26,7 +26,8 @@ type User struct {
 	Token      string
 }
 
-func init() {
+// Init ...
+func Init() {
 	userGroup = make([]*User, 0)
 	for _, v := range config.C.Auth {
 		if len(userGroup) <= 100 {

@@ -23,6 +23,14 @@ var (
 	REDISALREADYEXISTS = -1
 	// REDISINITERROR 节点启动失败
 	REDISINITERROR = -2
+	/**/
+	typeNone   string = "none"
+	typeString string = "string"
+	typeList   string = "list"
+	typeSet    string = "set"
+	typeZset   string = "zset"
+	typeHash   string = "hash"
+	typeStream string = "stream"
 )
 
 type _redisSources struct {
@@ -115,7 +123,8 @@ type DetailResult struct {
 	Stats
 }
 
-func init() {
+// Init ...
+func Init() {
 	redisSources = &_redisSources{
 		RS: make(map[string]*target),
 	}
@@ -583,6 +592,7 @@ func GetDetailObj(id string) []*DetailResult {
 	return nil
 }
 
+// SlogLog ...
 type SlogLog struct {
 	Addr  string
 	Count int
@@ -622,54 +632,6 @@ func GetSlowLogObj(id string) []*SlogLog {
 	}
 	return nil
 }
-
-// // SlowLogs ...
-// type SlowLogs struct {
-// }
-
-// // GetSlowLogs 慢日志查询
-// func GetSlowLogs(id string) []*DetailResult {
-// 	if redisSources.Get(id) == nil {
-// 		return nil
-// 	}
-// 	switch redisSources.Get(id).self.(type) {
-// 	case *redis.Client:
-// 		// z := redisSources.Get(id).self.(*redis.Client)
-// 		// v := &DetailResult{
-// 		// 	ADDR: z.Options().Addr,
-// 		// 	Type: "single",
-// 		// }
-// 		// address := strings.Split(v.ADDR, ":")[0] + ":9712"
-// 		// conn, e := opcap.CreateOrGetClient(address)
-// 		// if e != nil {
-// 		// 	v.OpcapOnline = false
-// 		// 	log.FMTLog(log.LOGWARN, "opcap connected error")
-// 		// 	log.FMTLog(log.LOGWARN, e.Error())
-// 		// } else {
-// 		// 	str := opcap.PING(conn, address)
-// 		// 	if str == "pong" {
-// 		// 		v.OpcapOnline = true
-// 		// 	}
-// 		// }
-// 		// getMemory(z, v)
-// 		// servers := _getServer(id)
-// 		// for _, z := range servers {
-// 		// 	if len(strings.Split(v.ADDR, z.ADDR)) > 1 {
-// 		// 		v.VERSION = z.RedisVersion
-// 		// 	}
-// 		// }
-// 		return nil
-// 	case *redis.ClusterClient:
-// 		z := redisSources.Get(id).self.(*redis.ClusterClient)
-// 		z.ForEachNode(func(c *redis.Client) error {
-// 			c.SlowLog(10).Result()
-// 			return nil
-// 		})
-// 		return nil
-// 	default:
-// 	}
-// 	return nil
-// }
 
 // GetDetail ...
 func GetDetail(id string) string {
@@ -1007,35 +969,6 @@ func DebugHtstats(address string, db int) string {
 	return message.Res(200, result)
 }
 
-var (
-	/*
-			  if (o == NULL) {
-		        type = "none";
-		    } else {
-		        switch(o->type) {
-		        case OBJ_STRING: type = "string"; break;
-		        case OBJ_LIST: type = "list"; break;
-		        case OBJ_SET: type = "set"; break;
-		        case OBJ_ZSET: type = "zset"; break;
-		        case OBJ_HASH: type = "hash"; break;
-		        case OBJ_STREAM: type = "stream"; break;
-		        case OBJ_MODULE: {
-		            moduleValue *mv = o->ptr;
-		            type = mv->type->name;
-		        }; break;
-		        default: type = "unknown"; break;
-		        }
-		    }
-	*/
-	typeNone   string = "none"
-	typeString string = "string"
-	typeList   string = "list"
-	typeSet    string = "set"
-	typeZset   string = "zset"
-	typeHash   string = "hash"
-	typeStream string = "stream"
-)
-
 // SafeDel ...
 func SafeDel(address, key string, db int, fn func(string, ...int64)) string {
 	tcpAddr, err := net.ResolveTCPAddr("tcp", address)
@@ -1218,11 +1151,4 @@ func SafeDel(address, key string, db int, fn func(string, ...int64)) string {
 		fn("failed unknow type: " + t)
 		return message.Res(500, t)
 	}
-}
-
-func init() {
-	// fmt.Println(SafeDel("10.0.6.48:6379", "test", 0, func(s string, i ...int64) {
-	// 	fmt.Println(s)
-	// }))
-	// DebugHtstats("10.0.6.49:6379", 0)
 }

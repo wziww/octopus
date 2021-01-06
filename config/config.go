@@ -72,7 +72,8 @@ type Opcap struct {
 	BPFFilter string `toml:"BPFFilter"`
 }
 
-func init() {
+// Init ...
+func Init() {
 	configPath := flag.String("c", "./conf/server.conf.toml", "config path")
 	flag.Parse()
 	if C == nil {

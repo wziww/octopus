@@ -1,14 +1,14 @@
 package main
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 	_ "net/http/pprof"
 	"octopus/config"
 	"octopus/log"
-	_ "octopus/myredis"
-	_ "octopus/myredis/rdb"
+	"octopus/message"
+	"octopus/myredis"
+	"octopus/permission"
 	"os"
 	"path"
 	"strings"
@@ -32,6 +32,13 @@ func (p *program) Init(e svc.Environment) error {
 }
 func (p *program) Start() error {
 	log.FMTLog(log.LOGWARN, "octopus start")
+	config.Init()
+	log.Init()
+	message.Init()
+	permission.Init()
+	myredis.Init()
+	RouterInit()
+	WsInit()
 	go func() {
 		log.FMTLog(log.LOGWARN, "HTTP start at "+config.C.Server.ListenAddress)
 		server := &http.Server{
@@ -107,6 +114,6 @@ func (p *program) Start() error {
 	return nil
 }
 func (p *program) Stop() error {
-	fmt.Println("exit")
+	log.FMTLog(log.LOGWARN, "octopus exit")
 	return nil
 }

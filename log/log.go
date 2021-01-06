@@ -45,7 +45,8 @@ func (file *_f) Print(strs ...interface{}) {
 	}
 }
 
-func init() {
+// Init ...
+func Init() {
 	f = &_f{}
 	logLevel = LOGNONE
 	dir := config.C.Log.LogPath

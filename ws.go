@@ -56,7 +56,8 @@ func (osall *oSocketAll) remove(id string) {
 
 var socketAll *oSocketAll
 
-func init() {
+// WsInit ...
+func WsInit() {
 	socketAll = &oSocketAll{}
 }
 
