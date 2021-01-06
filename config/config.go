@@ -74,8 +74,14 @@ type Opcap struct {
 
 // Init ...
 func Init() {
-	configPath := flag.String("c", "./conf/server.conf.toml", "config path")
+	configPath := flag.String("c", "", "config path")
 	flag.Parse()
+	if *configPath == "" {
+		*configPath = os.Getenv("CONFIG_FILE")
+		if *configPath == "" {
+			*configPath = "./conf/server.conf.toml"
+		}
+	}
 	if C == nil {
 		fdata, openError := ioutil.ReadFile(*configPath)
 		if openError != nil {

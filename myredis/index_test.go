@@ -1,6 +1,13 @@
 package myredis
 
 import (
+	"crypto/md5"
+	"fmt"
+	"octopus/config"
+	"octopus/log"
+	"octopus/message"
+	"octopus/permission"
+	"os"
 	"testing"
 )
 
@@ -31,5 +38,27 @@ func TestTrim(t *testing.T) {
 func TestStrArrToInterface(t *testing.T) {
 	if len(strArrToInterface([]string{"a", "b", "c"})) != 3 {
 		t.Fatal("strArrToInterface error")
+	}
+}
+
+func TestCluster(t *testing.T) {
+	os.Setenv("CONFIG_FILE", "../conf/test.conf")
+	config.Init()
+	log.Init()
+	message.Init()
+	permission.Init()
+	Init()
+	testID := fmt.Sprintf("%x", md5.Sum([]byte(config.C.Redis[0].Name)))
+	if !checkIsCluster(testID) {
+		t.Fatalf("%s\n", "redis-server not running in cluster mod")
+	}
+	if len(_getServer(testID)) != 6 {
+		t.Fatalf("%s\n", "_getServer error")
+	}
+	if GetServer(testID) == "" {
+		t.Fatalf("%s\n", "GetServer error")
+	}
+	if GetServer("testID") != "" {
+		t.Fatalf("%s\n", "GetServer error")
 	}
 }
