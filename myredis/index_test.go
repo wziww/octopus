@@ -41,6 +41,10 @@ func TestStrArrToInterface(t *testing.T) {
 	}
 }
 
+var (
+	nodeNum int = 6
+)
+
 func TestCluster(t *testing.T) {
 	os.Setenv("CONFIG_FILE", "../conf/test.conf")
 	config.Init()
@@ -52,7 +56,7 @@ func TestCluster(t *testing.T) {
 	if !checkIsCluster(testID) {
 		t.Fatalf("%s\n", "redis-server not running in cluster mod")
 	}
-	if len(_getServer(testID)) != 6 {
+	if len(_getServer(testID)) != nodeNum {
 		t.Fatalf("%s\n", "_getServer error")
 	}
 	if len(_getServer("testID")) != 0 {
@@ -67,7 +71,7 @@ func TestCluster(t *testing.T) {
 	if ClusterSlotsStats(testID) == "" {
 		t.Fatalf("%s\n", "ClusterSlotsStats error")
 	}
-	if len(GetDetailObj(testID)) != 6 {
+	if len(GetDetailObj(testID)) != nodeNum {
 		t.Fatalf("%s\n", "GetDetailObj error")
 	}
 }
