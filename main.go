@@ -24,7 +24,7 @@ type program struct {
 func main() {
 	prg := &program{}
 	if err := svc.Run(prg, syscall.SIGINT, syscall.SIGTERM); err != nil {
-		fmt.Println(err)
+		log.FMTLog(log.LOGERROR, err)
 	}
 }
 func (p *program) Init(e svc.Environment) error {
