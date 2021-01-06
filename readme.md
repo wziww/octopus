@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/wziww/octopus.svg?branch=master)](https://travis-ci.com/wziww/octopus)
+# [![Build Status](https://travis-ci.com/wziww/octopus.svg?branch=master)](https://travis-ci.com/wziww/octopus) [![Coverage Status](https://codecov.io/gh/wziww/octopus/branch/master/graph/badge.svg)](https://codecov.io/gh/wziww/octopus)
 ### TODO LIST
 - [ ] es 集群操作及监控
 - [ ] mysql 监控及操作
