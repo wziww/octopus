@@ -55,7 +55,8 @@ func (p *program) Start() error {
 				return
 			}
 			defer file.Close()
-			f, err := os.OpenFile(path.Join(config.C.RDB.Dir, header.Filename), os.O_CREATE|os.O_RDWR, 0666)
+
+			f, err := os.OpenFile(path.Join(config.C.RDB.Dir, path.Base(header.Filename)), os.O_CREATE|os.O_RDWR, 0666)
 			if err != nil {
 				w.WriteHeader(500)
 				w.Write([]byte(err.Error()))
