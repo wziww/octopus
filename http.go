@@ -5,6 +5,7 @@ import (
 	"crypto/md5"
 	"fmt"
 	"net/http"
+	"octopus/config"
 	"octopus/myredis"
 	"strconv"
 )
@@ -39,9 +40,19 @@ func cacheRate(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("404"))
 		return
 	}
-	id := fmt.Sprintf("%x", md5.Sum([]byte(names[0])))
+	var c config.RedisDetail
+	for _, v := range config.C.Redis {
+		if v.Name == names[0] {
+			c = v
+			goto next
+		}
+	}
+	w.Write([]byte("404"))
+	return
+next:
+	id := fmt.Sprintf("%x", md5.Sum([]byte(c.Name)))
 	all := myredis.GetStatsObj(id)
-	key := "cache_hit_rate_" + names[0]
+	key := "cache_hit_rate_" + c.Name
 	var exportData bytes.Buffer
 	exportData.WriteString(fmt.Sprintf("%s%s%s\n", "# HELP ", key, " The cache hit rate of the entire of cluster."))
 	exportData.WriteString(fmt.Sprintf("%s%s%s\n", "# TYPE ", key, " gauge"))
@@ -74,9 +85,19 @@ func slowlog(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("404"))
 		return
 	}
-	id := fmt.Sprintf("%x", md5.Sum([]byte(names[0])))
+	var c config.RedisDetail
+	for _, v := range config.C.Redis {
+		if v.Name == names[0] {
+			c = v
+			goto next
+		}
+	}
+	w.Write([]byte("404"))
+	return
+next:
+	id := fmt.Sprintf("%x", md5.Sum([]byte(c.Name)))
 	all := myredis.GetSlowLogObj(id)
-	key := "slowlog_" + names[0]
+	key := "slowlog_" + c.Name
 	var exportData bytes.Buffer
 	exportData.WriteString(fmt.Sprintf("%s%s%s", "# HELP ", key, " The slowlog count of the entire of cluster.\n"))
 	exportData.WriteString(fmt.Sprintf("%s%s%s", "# TYPE ", key, " gauge\n"))
@@ -99,9 +120,18 @@ func _memoryTotal(names []string) []byte {
 	if len(names) < 1 {
 		return []byte("404")
 	}
-	id := fmt.Sprintf("%x", md5.Sum([]byte(names[0])))
+	var c config.RedisDetail
+	for _, v := range config.C.Redis {
+		if v.Name == names[0] {
+			c = v
+			goto next
+		}
+	}
+	return []byte("404")
+next:
+	id := fmt.Sprintf("%x", md5.Sum([]byte(c.Name)))
 	all := myredis.GetDetailObj(id)
-	key := "memory_" + names[0]
+	key := "memory_" + c.Name
 	var exportData bytes.Buffer
 	exportData.WriteString(fmt.Sprintf("%s%s%s", "# HELP ", key, " The memory usage situation of the entire of cluster.\n"))
 	exportData.WriteString(fmt.Sprintf("%s%s%s", "# TYPE ", key, " gauge\n"))
@@ -125,9 +155,18 @@ func _opsTotal(names []string) []byte {
 	if len(names) < 1 {
 		return []byte("404")
 	}
-	id := fmt.Sprintf("%x", md5.Sum([]byte(names[0])))
+	var c config.RedisDetail
+	for _, v := range config.C.Redis {
+		if v.Name == names[0] {
+			c = v
+			goto next
+		}
+	}
+	return []byte("404")
+next:
+	id := fmt.Sprintf("%x", md5.Sum([]byte(c.Name)))
 	all := myredis.GetStatsObj(id)
-	key := "ops_" + names[0]
+	key := "ops_" + c.Name
 	var exportData bytes.Buffer
 	exportData.WriteString(fmt.Sprintf("%s%s%s", "# HELP ", key, " The ops & outputKbps & inputKbps situation  of the entire of cluster.\n"))
 	exportData.WriteString(fmt.Sprintf("%s%s%s", "# TYPE ", key, " gauge\n"))
