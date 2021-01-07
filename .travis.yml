@@ -13,5 +13,6 @@ install:
   - docker run -e "IP=0.0.0.0" -d -p 7000-7005:7000-7005 --name redis-cluster grokzen/redis-cluster:6.0.0
 
 after_success:
+  - mkdir -p /tmp/data/
   - make cover
   - bash <(curl -s https://codecov.io/bash)
