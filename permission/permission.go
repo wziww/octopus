@@ -49,13 +49,6 @@ func Init() {
 			})
 		}
 	}
-	token := "octopus"
-	u := &User{
-		Token:    token,
-		Username: "octopus",
-		Password: "octopus",
-	}
-	userGroup = append(userGroup, u)
 }
 func set(u *User) {
 	for _, v := range userGroup {
