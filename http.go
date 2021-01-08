@@ -183,7 +183,7 @@ next:
 		// InstantaneousOpsPerSec
 		t3, _ := strconv.ParseFloat(myredis.Trim(v.InstantaneousOpsPerSec), 64)
 		InstantaneousOpsPerSec += t3
-		exportData.WriteString(fmt.Sprintf("%s%s%s%s%s%s", key, "{type=\"each-ikbps\",host=\"", v.ADDR, "\"} ", myredis.Trim(v.InstantaneousOpsPerSec), " \n"))
+		exportData.WriteString(fmt.Sprintf("%s%s%s%s%s%s", key, "{type=\"each-ops\",host=\"", v.ADDR, "\"} ", myredis.Trim(v.InstantaneousOpsPerSec), " \n"))
 	}
 	exportData.WriteString(fmt.Sprintf("%s%s%.2f%s", key, "{type=\"total-okbps\",host=\"*\"} ", InstantaneousOutputKbps, " \n"))
 	exportData.WriteString(fmt.Sprintf("%s%s%.2f%s", key, "{type=\"total-ikbps\",host=\"*\"} ", InstantaneousInputKbps, " \n"))
