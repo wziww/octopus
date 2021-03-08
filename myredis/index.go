@@ -1008,8 +1008,9 @@ func SafeDel(address, key string, db int, fn func(string, ...int64)) string {
 		fn(fmt.Sprintf("about %d keys in hash key「%s」to del, job starting...", n, key))
 		var keys []string
 		fn(fmt.Sprintf("%d / %d keys to delete", n, n))
+		var start uint64
 		for {
-			keys, _, err = tmpClient.HScan(key, 0, "*", 10).Result()
+			keys, start, err = tmpClient.HScan(key, start, "*", 10).Result()
 			if err != nil {
 				return message.Res(500, err.Error())
 			}
@@ -1045,8 +1046,9 @@ func SafeDel(address, key string, db int, fn func(string, ...int64)) string {
 		fn(fmt.Sprintf("about %d keys in hash key「%s」to del, job starting...", n, key))
 		var keys []string
 		fn(fmt.Sprintf("%d / %d keys to delete", n, n))
+		var start uint64
 		for {
-			keys, _, err = tmpClient.ZScan(key, 0, "*", 10).Result()
+			keys, start, err = tmpClient.ZScan(key, start, "*", 10).Result()
 			if err != nil {
 				fn(err.Error())
 				return message.Res(500, err.Error())
@@ -1083,8 +1085,9 @@ func SafeDel(address, key string, db int, fn func(string, ...int64)) string {
 		fn(fmt.Sprintf("about %d keys in hash key「%s」to del, job starting...", n, key))
 		var keys []string
 		fn(fmt.Sprintf("%d / %d keys to delete", n, n))
+		var start uint64
 		for {
-			keys, _, err = tmpClient.SScan(key, 0, "*", 10).Result()
+			keys, start, err = tmpClient.SScan(key, start, "*", 10).Result()
 			if err != nil {
 				fn(err.Error())
 				return message.Res(500, err.Error())
