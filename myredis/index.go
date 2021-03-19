@@ -3,6 +3,7 @@ package myredis
 import (
 	"crypto/md5"
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
 	"net"
 	"octopus/config"
@@ -10,6 +11,8 @@ import (
 	"octopus/message"
 	cluster "octopus/myredis/cluster"
 	"octopus/opcap"
+	"os"
+	"path"
 	"strconv"
 	"strings"
 	"sync"
@@ -23,14 +26,6 @@ var (
 	REDISALREADYEXISTS = -1
 	// REDISINITERROR 节点启动失败
 	REDISINITERROR = -2
-	/**/
-	typeNone   string = "none"
-	typeString string = "string"
-	typeList   string = "list"
-	typeSet    string = "set"
-	typeZset   string = "zset"
-	typeHash   string = "hash"
-	typeStream string = "stream"
 )
 
 type _redisSources struct {
@@ -74,19 +69,23 @@ func (r *_redisSources) Delete(k string) {
 }
 
 type target struct {
-	Name        string
-	Type        string
-	Addrs       []string
-	MemoryTotal int64
-	Status      string
-	password    string
-	self        interface{}
+	Name              string
+	Type              string
+	Addrs             []string
+	MemoryTotal       int64
+	Status            string
+	password          string
+	SlowLogLimitCount int    // >= 多少进行快照
+	DataDir           string // 快照保存目录
+	self              interface{}
 }
 
 // Server address => version
 type Server struct {
-	ADDR         string
-	RedisVersion string
+	ADDR            string
+	RedisVersion    string
+	UptimeInSeconds int
+	UptimeInDays    int
 }
 
 // Stats redis「info stats」
@@ -109,16 +108,18 @@ type Memory struct {
 
 // DetailResult node detail
 type DetailResult struct {
-	ID          string
-	ADDR        string
-	FOLLOW      string
-	ROLE        string
-	EPOTH       string
-	STATE       string
-	SLOT        string
-	Type        string
-	VERSION     string
-	OpcapOnline bool
+	ID              string
+	ADDR            string
+	FOLLOW          string
+	ROLE            string
+	EPOTH           string
+	STATE           string
+	SLOT            string
+	Type            string
+	VERSION         string
+	UptimeInSeconds int
+	UptimeInDays    int
+	OpcapOnline     bool
 	Memory
 	Stats
 }
@@ -129,7 +130,7 @@ func Init() {
 		RS: make(map[string]*target),
 	}
 	for _, v := range config.C.Redis {
-		AddSource(v.Name, &redis.Options{
+		AddSource(v, &redis.Options{
 			Addr:     v.Address[0],
 			Password: v.Password,
 		})
@@ -286,7 +287,7 @@ func ClusterSlotsSet(id, host, port string, start, end int64) string {
 }
 
 // AddSource 添加监控源
-func AddSource(name string, opt *redis.Options) string {
+func AddSource(v config.RedisDetail, opt *redis.Options) string {
 	opt.Dialer = func() (net.Conn, error) {
 		netDialer := &net.Dialer{
 			Timeout:   opt.DialTimeout,
@@ -297,7 +298,7 @@ func AddSource(name string, opt *redis.Options) string {
 		}
 		return tls.DialWithDialer(netDialer, opt.Network, opt.Addr, opt.TLSConfig)
 	}
-	n := fmt.Sprintf("%x", md5.Sum([]byte(name)))
+	n := fmt.Sprintf("%x", md5.Sum([]byte(v.Name)))
 	REDISTYPE := "single"
 	var c interface{}
 	if redisSources.Get(n) != nil {
@@ -334,11 +335,13 @@ finish:
 	if pingStr == "PONG" {
 		log.FMTLog(log.LOGWARN, opt.Addr, "REDIS JOINED")
 		redisSources.Set(n, &target{
-			Name:     name,
-			Type:     REDISTYPE,
-			Addrs:    []string{opt.Addr},
-			self:     c,
-			password: opt.Password,
+			Name:              v.Name,
+			Type:              REDISTYPE,
+			Addrs:             []string{opt.Addr},
+			SlowLogLimitCount: v.SlowLogLimitCount,
+			DataDir:           v.DataDir,
+			self:              c,
+			password:          opt.Password,
 		})
 	}
 	return message.Res(200, 0)
@@ -350,6 +353,22 @@ func getServer(z *redis.Client) *Server {
 		ADDR: z.Options().Addr,
 	}
 	for _, z := range toLines(str) {
+		if value := getFromRDSStr(z, "uptime_in_seconds:"); value != "" {
+			var err error
+			value = strings.ReplaceAll(value, "\r", "")
+			value = strings.ReplaceAll(value, "\n", "")
+			v.UptimeInSeconds, err = strconv.Atoi(value)
+			log.FMTLog(log.LOGERROR, err)
+			continue
+		}
+		if value := getFromRDSStr(z, "uptime_in_days:"); value != "" {
+			var err error
+			value = strings.ReplaceAll(value, "\r", "")
+			value = strings.ReplaceAll(value, "\n", "")
+			v.UptimeInDays, err = strconv.Atoi(value)
+			log.FMTLog(log.LOGERROR, err)
+			continue
+		}
 		if value := getFromRDSStr(z, "redis_version:"); value != "" {
 			v.RedisVersion = value
 			continue
@@ -503,6 +522,8 @@ func GetDetailObj(id string) []*DetailResult {
 		servers := _getServer(id)
 		for _, z := range servers {
 			if len(strings.Split(v.ADDR, z.ADDR)) > 1 {
+				v.UptimeInDays = z.UptimeInDays
+				v.UptimeInSeconds = z.UptimeInSeconds
 				v.VERSION = z.RedisVersion
 			}
 		}
@@ -569,6 +590,8 @@ func GetDetailObj(id string) []*DetailResult {
 		for _, v := range result {
 			for _, z := range servers {
 				if len(strings.Split(v.ADDR, z.ADDR)) > 1 {
+					v.UptimeInDays = z.UptimeInDays
+					v.UptimeInSeconds = z.UptimeInSeconds
 					v.VERSION = z.RedisVersion
 					v.OpcapOnline = false
 					if v.ROLE == "myself,master" {
@@ -592,7 +615,6 @@ func GetDetailObj(id string) []*DetailResult {
 	return nil
 }
 
-// SlogLog ...
 type SlogLog struct {
 	Addr  string
 	Count int
@@ -607,7 +629,8 @@ func GetSlowLogObj(id string) []*SlogLog {
 	case *redis.Client:
 		return []*SlogLog{}
 	case *redis.ClusterClient:
-		z := redisSources.Get(id).self.(*redis.ClusterClient)
+		_redis := redisSources.Get(id)
+		z := _redis.self.(*redis.ClusterClient)
 		var result []*SlogLog
 		var (
 			resultAppendLock sync.Mutex
@@ -618,6 +641,28 @@ func GetSlowLogObj(id string) []*SlogLog {
 				log.FMTLog(log.LOGERROR, nodesError)
 				return nodesError
 			}
+			if count > _redis.SlowLogLimitCount {
+				filename := path.Join(_redis.DataDir, "slow_log_"+c.Options().Addr+"_"+time.Now().Format("2006-01-02_15:04:05"))
+				fd, err := os.OpenFile(filename, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0666)
+				if err != nil {
+					log.FMTLog(log.LOGERROR, err)
+					goto next
+				}
+				defer fd.Close()
+				defer fd.Sync()
+				res, err := c.Do("SLOWLOG", "GET", 1<<7 /* default 128*/).Result()
+				if err != nil {
+					log.FMTLog(log.LOGERROR, err)
+					goto next
+				}
+				bts, _ := json.Marshal(res)
+				_, err = fd.Write(bts)
+				if err != nil {
+					log.FMTLog(log.LOGERROR, err)
+					goto next
+				}
+			}
+		next:
 			c.Do("SLOWLOG", "RESET")
 			resultAppendLock.Lock()
 			result = append(result, &SlogLog{
@@ -969,7 +1014,36 @@ func DebugHtstats(address string, db int) string {
 	return message.Res(200, result)
 }
 
-// SafeDel ...
+var (
+	/*
+			  if (o == NULL) {
+		        type = "none";
+		    } else {
+		        switch(o->type) {
+		        case OBJ_STRING: type = "string"; break;
+		        case OBJ_LIST: type = "list"; break;
+		        case OBJ_SET: type = "set"; break;
+		        case OBJ_ZSET: type = "zset"; break;
+		        case OBJ_HASH: type = "hash"; break;
+		        case OBJ_STREAM: type = "stream"; break;
+		        case OBJ_MODULE: {
+		            moduleValue *mv = o->ptr;
+		            type = mv->type->name;
+		        }; break;
+		        default: type = "unknown"; break;
+		        }
+		    }
+	*/
+	typeNone   string = "none"
+	typeString string = "string"
+	typeList   string = "list"
+	typeSet    string = "set"
+	typeZset   string = "zset"
+	typeHash   string = "hash"
+	typeStream string = "stream"
+)
+
+// SafeDel key-value 安全删除操作
 func SafeDel(address, key string, db int, fn func(string, ...int64)) string {
 	tcpAddr, err := net.ResolveTCPAddr("tcp", address)
 	if err != nil {
@@ -1009,12 +1083,14 @@ func SafeDel(address, key string, db int, fn func(string, ...int64)) string {
 		var keys []string
 		fn(fmt.Sprintf("%d / %d keys to delete", n, n))
 		var start uint64
+		var c int64
 		for {
 			keys, start, err = tmpClient.HScan(key, start, "*", 10).Result()
 			if err != nil {
 				return message.Res(500, err.Error())
 			}
 			for _, v := range keys {
+				c++
 				_, err = tmpClient.HDel(key, v).Result()
 				if err != nil {
 					fn(err.Error())
@@ -1027,7 +1103,10 @@ func SafeDel(address, key string, db int, fn func(string, ...int64)) string {
 				fn(err.Error())
 				return message.Res(500, err.Error())
 			}
-			fn(fmt.Sprintf("%d / %d keys to delete", n2, n))
+			if c*10*2%n > 0 {
+				c -= c * 10 * 2 % n * n
+				fn(fmt.Sprintf("%d / %d keys to delete", n2, n))
+			}
 			select {
 			case <-time.After(time.Microsecond * 100):
 			}
@@ -1047,6 +1126,7 @@ func SafeDel(address, key string, db int, fn func(string, ...int64)) string {
 		var keys []string
 		fn(fmt.Sprintf("%d / %d keys to delete", n, n))
 		var start uint64
+		var c int64
 		for {
 			keys, start, err = tmpClient.ZScan(key, start, "*", 10).Result()
 			if err != nil {
@@ -1054,6 +1134,7 @@ func SafeDel(address, key string, db int, fn func(string, ...int64)) string {
 				return message.Res(500, err.Error())
 			}
 			for _, v := range keys {
+				c++
 				_, err = tmpClient.ZRem(key, v).Result()
 				if err != nil {
 					fn(err.Error())
@@ -1066,7 +1147,10 @@ func SafeDel(address, key string, db int, fn func(string, ...int64)) string {
 				fn(err.Error())
 				return message.Res(500, err.Error())
 			}
-			fn(fmt.Sprintf("%d / %d keys to delete", n2, n))
+			if c*10*2%n > 0 {
+				c -= c * 10 * 2 % n * n
+				fn(fmt.Sprintf("%d / %d keys to delete", n2, n))
+			}
 			select {
 			case <-time.After(time.Microsecond * 100):
 			}
@@ -1086,6 +1170,7 @@ func SafeDel(address, key string, db int, fn func(string, ...int64)) string {
 		var keys []string
 		fn(fmt.Sprintf("%d / %d keys to delete", n, n))
 		var start uint64
+		var c int64
 		for {
 			keys, start, err = tmpClient.SScan(key, start, "*", 10).Result()
 			if err != nil {
@@ -1093,6 +1178,7 @@ func SafeDel(address, key string, db int, fn func(string, ...int64)) string {
 				return message.Res(500, err.Error())
 			}
 			for _, v := range keys {
+				c++
 				_, err = tmpClient.SRem(key, v).Result()
 				if err != nil {
 					fn(err.Error())
@@ -1104,7 +1190,10 @@ func SafeDel(address, key string, db int, fn func(string, ...int64)) string {
 			if err != nil {
 				return message.Res(500, err.Error())
 			}
-			fn(fmt.Sprintf("%d / %d keys to delete", n2, n))
+			if c*10*2%n > 0 {
+				c -= c * 10 * 2 % n * n
+				fn(fmt.Sprintf("%d / %d keys to delete", n2, n))
+			}
 			select {
 			case <-time.After(time.Microsecond * 100):
 			}
@@ -1122,8 +1211,10 @@ func SafeDel(address, key string, db int, fn func(string, ...int64)) string {
 		}
 		fn(fmt.Sprintf("about %d keys in hash key「%s」to del, job starting...", n, key))
 		fn(fmt.Sprintf("%d / %d keys to delete", n, n))
+		var c int64
 		for {
 			for i := 0; i < 10; i++ {
+				c++
 				_, err := tmpClient.LPop(key).Result()
 				if err != nil {
 					if err == redis.Nil {
@@ -1142,7 +1233,10 @@ func SafeDel(address, key string, db int, fn func(string, ...int64)) string {
 				fn(err.Error())
 				return message.Res(500, err.Error())
 			}
-			fn(fmt.Sprintf("%d / %d keys to delete", n2, n))
+			if c*10*2%n > 0 {
+				c -= c * 10 * 2 % n * n
+				fn(fmt.Sprintf("%d / %d keys to delete", n2, n))
+			}
 			if n2 == 0 {
 				break
 			}

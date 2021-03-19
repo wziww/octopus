@@ -82,10 +82,29 @@
       <a-table-column title="address" data-index="address" key="address">
         <template slot-scope="address">
           <div
-            style="width: 100px; word-wrap: break-word; cursor: pointer"
+            style="word-wrap: break-word; cursor: pointer"
             :key="address"
           >
             {{ address }}
+          </div>
+        </template>
+      </a-table-column>
+      <a-table-column title="运行时长(days)" data-index="Uptime" key="Uptime.UptimeInDays">
+        <template slot-scope="Uptime">
+          <div
+            style="word-wrap: break-word; cursor: pointer"
+            :key="Uptime.UptimeInDays"
+          >
+            <a-tooltip
+              placement="topLeft"
+              :title="parseInt(Uptime.UptimeInSeconds/60/60)+' hours'"
+              :getPopupContainer="getPopupContainer"
+              >
+                <a-tag
+                :color="Uptime.UptimeInDays < 2 ? 'red' :'green'">
+                {{ Uptime.UptimeInDays }}
+                </a-tag>
+            </a-tooltip>
           </div>
         </template>
       </a-table-column>
@@ -105,7 +124,7 @@
         <template slot-scope="id">
           <div
             v-for="each in split(id)"
-            style="width: 100px; word-wrap: break-word"
+            style="word-wrap: break-word"
             :key="each"
           >
             {{ each }}
@@ -121,7 +140,7 @@
         <template slot-scope="follow">
           <div
             v-for="each in split(follow)"
-            style="width: 100px; word-wrap: break-word"
+            style="word-wrap: break-word"
             :key="each"
           >
             {{ each }}
@@ -316,6 +335,7 @@ export default {
             id: i.ID,
             address: i.ADDR,
             follow: i.FOLLOW,
+            Uptime: {UptimeInDays: i.UptimeInDays, UptimeInSeconds: i.UptimeInSeconds},
             role: [
               {
                 ROLE: (() => {
