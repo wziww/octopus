@@ -5,7 +5,7 @@ build-linux:
 build-mac:
 	CGO_ENABLED=no go build -ldflags "-w -s" -o ./build/octopus-mac ./main.go ./ws.go ./http.go ./router.go
 
-.PHONY: cover
+.PHONY: cover build build-linux build-mac
 cover:
 	go test -race -coverprofile=cover.out -coverpkg=./... ./...
 	go tool cover -html=cover.out -o cover.html

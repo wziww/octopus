@@ -1,4 +1,4 @@
-import { Error404, } from './base';
+import { Error404 } from './base';
 import common from '../common/common';
 import {
   SettingPage,
@@ -6,7 +6,6 @@ import {
   RedisMonit,
   RedisMonitMain,
   RedisDev,
-  RedisOpcap,
 } from './modules/setting';
 export default [
   {
@@ -26,7 +25,6 @@ export default [
       RedisMonit,
       RedisMonitMain,
       RedisDev,
-      RedisOpcap,
       Error404,
     ],
   },

@@ -26,7 +26,6 @@ type Config struct {
 	Log           *Log
 	Auth          []Auth     `toml:"auth"`
 	AuthConfig    AuthConfig `toml:"auth-config"`
-	Opcap         *Opcap     `toml:"opcap"`
 	Robin         *Robin     `toml:"robin"`
 	Feishu        *Feishu    `toml:"feishu"`
 	Luffy         *Luffy     `toml:"luffy"`
@@ -107,12 +106,6 @@ type Auth struct {
 // AuthConfig ...
 type AuthConfig struct {
 	Key string `toml:"key"`
-}
-
-// Opcap ...
-type Opcap struct {
-	Device    string `toml:"device"`
-	BPFFilter string `toml:"BPFFilter"`
 }
 
 // Init ...

@@ -264,21 +264,6 @@
           </span>
         </template>
       </a-table-column>
-      <a-table-column
-        v-if="config.opcap"
-        title="opcap"
-        data-index="operation"
-        key="operation"
-      >
-        <template slot-scope="operation, record">
-          <a-tag
-            @click="() => opcap(record)"
-            :color="operation == '节点监控' ? '#0ea7fb' : '#2c2c2c'"
-            >{{ operation }}</a-tag
-          >
-        </template>
-      </a-table-column>
-    </a-table>
   </div>
 </template>
 <script>
@@ -335,7 +320,7 @@ export default {
             id: i.ID,
             address: i.ADDR,
             follow: i.FOLLOW,
-            Uptime: {UptimeInDays: i.UptimeInDays, UptimeInSeconds: i.UptimeInSeconds},
+            Uptime: { UptimeInDays: i.UptimeInDays, UptimeInSeconds: i.UptimeInSeconds },
             role: [
               {
                 ROLE: (() => {
@@ -414,7 +399,6 @@ export default {
             })(),
             UsedMemory: (i.UsedMemory / 1024 / 1024).toFixed(2),
             TotalSystemMemory: (i.TotalSystemMemory / 1024 / 1024).toFixed(2),
-            operation: i.OpcapOnline ? "节点监控" : "不可用",
           });
         }
         data = data
@@ -443,11 +427,6 @@ export default {
     };
   },
   methods: {
-    opcap(record) {
-      if (record.operation !== "不可用") {
-        window.open("/opcap?address=" + record.address.split(":")[0]);
-      }
-    },
     getPopupContainer(trigger) {
       return trigger.parentElement;
     },

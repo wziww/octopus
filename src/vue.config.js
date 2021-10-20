@@ -30,7 +30,7 @@ module.exports = {
       .parent
       .output
       .chunkFilename('js/[name].[contenthash].js');
-    const types = ['vue-modules', 'vue', 'normal-modules', 'normal', ];
+    const types = ['vue-modules', 'vue', 'normal-modules', 'normal'];
     types.forEach(type => addStyleResource(config.module.rule('stylus').oneOf(type)));
     // 开启比gzip体验更好的Zopfli压缩
   },

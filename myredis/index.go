@@ -10,7 +10,6 @@ import (
 	"octopus/log"
 	"octopus/message"
 	cluster "octopus/myredis/cluster"
-	"octopus/opcap"
 	"os"
 	"path"
 	"strconv"
@@ -119,7 +118,6 @@ type DetailResult struct {
 	VERSION         string
 	UptimeInSeconds int
 	UptimeInDays    int
-	OpcapOnline     bool
 	Memory
 	Stats
 }
@@ -508,18 +506,6 @@ func GetDetailObj(id string) []*DetailResult {
 			ADDR: z.Options().Addr,
 			Type: "single",
 		}
-		address := strings.Split(v.ADDR, ":")[0] + ":9712"
-		conn, e := opcap.CreateOrGetClient(address)
-		if e != nil {
-			v.OpcapOnline = false
-			log.FMTLog(log.LOGWARN, "opcap connected error")
-			log.FMTLog(log.LOGWARN, e.Error())
-		} else {
-			str := opcap.PING(conn, address)
-			if str == "pong" {
-				v.OpcapOnline = true
-			}
-		}
 		getMemory(z, v)
 		_getStats(z, v)
 		servers := _getServer(id)
@@ -596,19 +582,7 @@ func GetDetailObj(id string) []*DetailResult {
 					v.UptimeInDays = z.UptimeInDays
 					v.UptimeInSeconds = z.UptimeInSeconds
 					v.VERSION = z.RedisVersion
-					v.OpcapOnline = false
-					if v.ROLE == "myself,master" {
-						address := strings.Split(v.ADDR, ":")[0] + ":9712"
-						conn, e := opcap.CreateOrGetClient(address)
-						if e != nil {
-							log.FMTLog(log.LOGWARN, "opcap connected error")
-							log.FMTLog(log.LOGWARN, e.Error())
-						} else {
-							if opcap.PING(conn, address) == "pong" {
-								v.OpcapOnline = true
-							}
-						}
-					}
+
 				}
 			}
 		}
@@ -1007,25 +981,6 @@ func RemoveSource(id string) string {
 	}
 	redisSources.Delete(id)
 	return message.Res(200, nil)
-}
-
-// CheckConnect 查看嗅探插件是否在线
-func CheckConnect(address string) string {
-	opcap.CreateOrGetClient(address)
-	return message.Res(200, nil)
-}
-
-// OpcapCount 嗅探插件统计结果
-func OpcapCount(address string) string {
-	address += ":9712"
-	conn, e := opcap.CreateOrGetClient(address)
-	if e != nil {
-		log.FMTLog(log.LOGWARN, "opcap connected error")
-		log.FMTLog(log.LOGWARN, e.Error())
-	} else {
-		return message.Res(200, strings.Join(opcap.Count(conn, address), "_"))
-	}
-	return ""
 }
 
 // redis debug module

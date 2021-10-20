@@ -1,4 +1,4 @@
-import { message, } from 'ant-design-vue';
+import { message } from 'ant-design-vue';
 
 const hd = (fn) => {
   return (da) => {
@@ -15,8 +15,10 @@ const hd = (fn) => {
       if (d.Data.code !== 200) {
         return message.error(d.Data.message);
       }
-      d.Data = d.Data.message;
-      fn(d);
+      if (d.Data.message) {
+        d.Data = d.Data.message;
+        fn(d);
+      }
     } catch (e) {
       console.error(e);
       message.error("sys error");
