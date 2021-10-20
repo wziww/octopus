@@ -335,7 +335,7 @@ export default {
             id: i.ID,
             address: i.ADDR,
             follow: i.FOLLOW,
-            Uptime: {UptimeInDays: i.UptimeInDays, UptimeInSeconds: i.UptimeInSeconds},
+            Uptime: { UptimeInDays: i.UptimeInDays, UptimeInSeconds: i.UptimeInSeconds },
             role: [
               {
                 ROLE: (() => {

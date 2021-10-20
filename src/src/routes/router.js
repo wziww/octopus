@@ -1,4 +1,4 @@
-import { Error404, } from './base';
+import { Error404 } from './base';
 import common from '../common/common';
 import {
   SettingPage,
