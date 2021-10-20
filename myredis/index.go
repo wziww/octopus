@@ -124,7 +124,7 @@ type DetailResult struct {
 	Stats
 }
 
-func init() {
+func Init() {
 	redisSources = &_redisSources{
 		RS: make(map[string]*target),
 	}
