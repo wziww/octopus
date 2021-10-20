@@ -124,8 +124,7 @@ type DetailResult struct {
 	Stats
 }
 
-// Init ...
-func Init() {
+func init() {
 	redisSources = &_redisSources{
 		RS: make(map[string]*target),
 	}
@@ -358,7 +357,9 @@ func getServer(z *redis.Client) *Server {
 			value = strings.ReplaceAll(value, "\r", "")
 			value = strings.ReplaceAll(value, "\n", "")
 			v.UptimeInSeconds, err = strconv.Atoi(value)
-			log.FMTLog(log.LOGERROR, err)
+			if err != nil {
+				log.FMTLog(log.LOGERROR, err)
+			}
 			continue
 		}
 		if value := getFromRDSStr(z, "uptime_in_days:"); value != "" {
@@ -366,7 +367,9 @@ func getServer(z *redis.Client) *Server {
 			value = strings.ReplaceAll(value, "\r", "")
 			value = strings.ReplaceAll(value, "\n", "")
 			v.UptimeInDays, err = strconv.Atoi(value)
-			log.FMTLog(log.LOGERROR, err)
+			if err != nil {
+				log.FMTLog(log.LOGERROR, err)
+			}
 			continue
 		}
 		if value := getFromRDSStr(z, "redis_version:"); value != "" {
@@ -627,7 +630,41 @@ func GetSlowLogObj(id string) []*SlogLog {
 	}
 	switch redisSources.Get(id).self.(type) {
 	case *redis.Client:
-		return []*SlogLog{}
+		_redis := redisSources.Get(id)
+		c := _redis.self.(*redis.Client)
+		count, nodesError := c.Do("SLOWLOG", "LEN").Int()
+		if nodesError != nil {
+			log.FMTLog(log.LOGERROR, nodesError)
+			return nil
+		}
+		if count > _redis.SlowLogLimitCount {
+			filename := path.Join(_redis.DataDir, "slow_log_"+c.Options().Addr+"_"+time.Now().Format("2006-01-02_15:04:05"))
+			fd, err := os.OpenFile(filename, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0666)
+			if err != nil {
+				log.FMTLog(log.LOGERROR, err)
+				return nil
+			}
+			defer fd.Close()
+			defer fd.Sync()
+			res, err := c.Do("SLOWLOG", "GET", 1<<7 /* default 128*/).Result()
+			if err != nil {
+				log.FMTLog(log.LOGERROR, err)
+				return nil
+			}
+			bts, _ := json.Marshal(res)
+			_, err = fd.Write(bts)
+			if err != nil {
+				log.FMTLog(log.LOGERROR, err)
+				return nil
+			}
+			c.Do("SLOWLOG", "RESET")
+		}
+		var result []*SlogLog
+		result = append(result, &SlogLog{
+			Addr:  c.Options().Addr,
+			Count: count,
+		})
+		return result
 	case *redis.ClusterClient:
 		_redis := redisSources.Get(id)
 		z := _redis.self.(*redis.ClusterClient)
