@@ -29,7 +29,7 @@
         type="error"
         showIcon
         :style="{
-          display: masterNums >= 3 ? 'none' : '',
+          display: type==='single' ? 'none' : masterNums >= 3 ? 'none' : '',
           width: '400px',
           float: 'left',
         }"
@@ -161,12 +161,12 @@
           </span>
         </template>
       </a-table-column>
-      <a-table-column
+      <a-table-column>
         title="epoth 值"
         data-index="epoth"
         key="epoth"
         v-if="type === 'cluster'"
-      />
+      </a-table-column>
       <a-table-column
         title="拥有 slot（槽点）"
         data-index="slot"
@@ -239,6 +239,27 @@
           >{{ TotalSystemMemory }}M</template
         >
       </a-table-column>
+      <a-table-column title="对象数" data-index="Keys" key="Keys">
+        <template slot-scope="Keys">
+          <span :style="{ color: 'blue' }">
+            {{ Keys }}
+          </span>
+        </template>
+      </a-table-column>
+      <a-table-column title="过期对象数" data-index="Expires" key="Expires">
+        <template slot-scope="Expires">
+          <span :style="{ color: 'blue' }">
+            {{ Expires }}
+            </span>
+        </template>
+      </a-table-column>
+      <a-table-column title="AvgTTL" data-index="AvgTTL" key="AvgTTL">
+        <template slot-scope="AvgTTL">
+          <span :style="{ color: 'blue' }">
+            {{ AvgTTL }}
+          </span>
+        </template>
+      </a-table-column>
       <a-table-column
         title="内存占用比例"
         data-index="memoryPercent"
@@ -264,6 +285,7 @@
           </span>
         </template>
       </a-table-column>
+    </a-table>
   </div>
 </template>
 <script>
@@ -399,6 +421,9 @@ export default {
             })(),
             UsedMemory: (i.UsedMemory / 1024 / 1024).toFixed(2),
             TotalSystemMemory: (i.TotalSystemMemory / 1024 / 1024).toFixed(2),
+            Keys: i.Keys,
+            Expires: i.Expires,
+            AvgTTL: i.AvgTTL
           });
         }
         data = data

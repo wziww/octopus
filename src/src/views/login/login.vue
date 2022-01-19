@@ -26,14 +26,14 @@
 </template>
 
 <script>
-import { mapActions, } from "vuex";
+import { mapActions } from "vuex";
 import vueCanvasNest from "vue-canvas-nest";
 import moment from "moment";
-import { message, } from "ant-design-vue";
+import { message } from "ant-design-vue";
 import bg1 from "./login_bg_1.jpg";
 import bg2 from "./login_bg_2.jpg";
 import WS from "../../lib/websocket";
-import { TokenSet, PermissionSet, } from "../../lib/token";
+import { TokenSet, PermissionSet } from "../../lib/token";
 import config from "../../config/index";
 const PATH = "login";
 let ws = new WS(config.Host + "?op=" + PATH + "&ot=octopus");
@@ -49,7 +49,7 @@ export default {
         username: [
           { required: true, message: "请输入用户名", trigger: "blur", },
         ],
-        password: [{ required: true, message: "请输入密码", trigger: "blur", }, ],
+        password: [{ required: true, message: "请输入密码", trigger: "blur" }],
       },
       showLogin: false,
       bgImage: moment().hours() % 2 ? bg2 : bg1,
@@ -63,7 +63,7 @@ export default {
   },
   computed: {},
   methods: {
-    ...mapActions(["getAdminData", ]),
+    ...mapActions(["getAdminData"]),
     async submitForm(formName) {
       const that = this;
       ws.SendObj({

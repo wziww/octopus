@@ -120,8 +120,15 @@ type DetailResult struct {
 	UptimeInDays    int
 	Memory
 	Stats
+	KeySpace
 }
 
+// KeySpace Stats redis「info keyspace」
+type KeySpace struct {
+	Keys, Expires, AvgTTL string
+}
+
+// Init ...
 func Init() {
 	redisSources = &_redisSources{
 		RS: make(map[string]*target),
@@ -445,6 +452,29 @@ func GetConfig() string {
 	return message.Res(200, redisSources.Range())
 }
 
+/*
+# Keyspace
+db0:keys=2781672,expires=566418,avg_ttl=92564884
+*/
+func _getkeyspace(z *redis.Client, v *DetailResult) {
+	str, _ := z.Info("keyspace").Result()
+	str = strings.ReplaceAll(str, ",", "\n")
+	strArr := strings.Split(str, "\n")
+	for _, z := range strArr {
+		if value := getFromRDSStr(z, "db0:keys="); value != "" {
+			v.Keys = value
+			continue
+		}
+		if value := getFromRDSStr(z, "expires="); value != "" {
+			v.Expires = value
+			continue
+		}
+		if value := getFromRDSStr(z, "avg_ttl="); value != "" {
+			v.AvgTTL = value
+			continue
+		}
+	}
+}
 func _getStats(z *redis.Client, v *DetailResult) {
 	str, _ := z.Info("stats").Result()
 	strArr := strings.Split(str, "\n")
@@ -508,6 +538,7 @@ func GetDetailObj(id string) []*DetailResult {
 		}
 		getMemory(z, v)
 		_getStats(z, v)
+		_getkeyspace(z, v)
 		servers := _getServer(id)
 		for _, z := range servers {
 			if len(strings.Split(v.ADDR, z.ADDR)) > 1 {
