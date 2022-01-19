@@ -239,6 +239,27 @@
           >{{ TotalSystemMemory }}M</template
         >
       </a-table-column>
+      <a-table-column title="对象数" data-index="Keys" key="Keys">
+        <template slot-scope="Keys">
+          <span :style="{ color: 'blue' }">
+            {{ Keys }}
+          </span>
+        </template>
+      </a-table-column>
+      <a-table-column title="过期对象数" data-index="Expires" key="Expires">
+        <template slot-scope="Expires">
+          <span :style="{ color: 'blue' }">
+            {{ Expires }}
+            </span>
+        </template>
+      </a-table-column>
+      <a-table-column title="AvgTTL" data-index="AvgTTL" key="AvgTTL">
+        <template slot-scope="AvgTTL">
+          <span :style="{ color: 'blue' }">
+            {{ AvgTTL }}
+          </span>
+        </template>
+      </a-table-column>
       <a-table-column
         title="内存占用比例"
         data-index="memoryPercent"
@@ -400,6 +421,9 @@ export default {
             })(),
             UsedMemory: (i.UsedMemory / 1024 / 1024).toFixed(2),
             TotalSystemMemory: (i.TotalSystemMemory / 1024 / 1024).toFixed(2),
+            Keys: i.Keys,
+            Expires: i.Expires,
+            AvgTTL: i.AvgTTL
           });
         }
         data = data
