@@ -29,7 +29,7 @@
         type="error"
         showIcon
         :style="{
-          display: masterNums >= 3 ? 'none' : '',
+          display: type==='single' ? 'none' : masterNums >= 3 ? 'none' : '',
           width: '400px',
           float: 'left',
         }"
@@ -161,12 +161,12 @@
           </span>
         </template>
       </a-table-column>
-      <a-table-column
+      <a-table-column>
         title="epoth 值"
         data-index="epoth"
         key="epoth"
         v-if="type === 'cluster'"
-      />
+      </a-table-column>
       <a-table-column
         title="拥有 slot（槽点）"
         data-index="slot"
@@ -264,6 +264,7 @@
           </span>
         </template>
       </a-table-column>
+    </a-table>
   </div>
 </template>
 <script>
